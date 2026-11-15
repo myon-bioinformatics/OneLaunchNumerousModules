@@ -1160,7 +1160,7 @@ CIでは Python 3.11 / 3.15、Node 26、uv latest、Ubuntu 24.04、bash/zsh で�
 uv の install / uvx / uv add / 再インストール / uninstall を実際に試す場合：
 
 ```sh
-OLNM_TEST_UV=1 python3 -m unittest tests.test_invocation.TestUvLifecycle -v
+OLNM_TEST_UV=1 python3 -m unittest tests.test_docs.TestUvLifecycle -v
 ```
 
 uv とビルド時の setuptools が必要。初回はネットワークを使う場合がある。
