@@ -15,3 +15,6 @@ olnm = "olnm:main"
 
 [tool.setuptools]
 py-modules = ["olnm"]
+
+[dependency-groups]
+stdlib-test = ["pytest>=8", "pyyaml>=6"]
