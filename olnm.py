@@ -631,15 +631,17 @@ def ls(section: str | None = None, offline: bool = False) -> list[dict]:
             candidates = difflib.get_close_matches(section, list(dict.fromkeys([*_sections(), *_commands()])), n=3, cutoff=0.5)
             if candidates:
                 print("did you mean: " + ", ".join(candidates) + "? Use olnm ls SECTION or olnm COMMAND --help", file=sys.stderr)
-    for e in rows:
-        print(f"{e['section']:<8} {e['emoji']} {e['name']:<14} {e['desc']}")
-    return rows
+    return _print_rows(rows)
 
 
 def grep(*words: str) -> list[dict]:
     """Search names and descriptions (all words must match, case-insensitive)."""
     ws = [w.lower() for w in words]
-    rows = [e for e in entries() if all(w in f"{e['name']} {e['desc']}".lower() for w in ws)]
+    return _print_rows([e for e in entries() if all(w in f"{e['name']} {e['desc']}".lower() for w in ws)])
+
+
+def _print_rows(rows: list[dict]) -> list[dict]:
+    """One help line per row (shared by ls and grep)."""
     for e in rows:
         print(f"{e['section']:<8} {e['emoji']} {e['name']:<14} {e['desc']}")
     return rows
@@ -736,14 +738,14 @@ def dial(level: int | str | None = None) -> int:
 # ───────────────────────── 🏠 hub: handed over to NagoyAction (`nagoyaction hub …`) ─────────────────────────
 FORGE_STATE = OLNM_HOME / "forge" / "state.json"  # written by NagoyAction; olnm only checks it exists and reads the port
 HUB_SUBS = ("install", "bundle", "init", "up", "down", "status", "doctor", "logs", "dial", "repo", "api", "issue", "pr", "labels", "sync")
-_NAGOYA_HEAD = {"hub": "🏠 the local forge now lives in NagoyAction: olnm hub … runs `nagoyaction hub …`.",
-                "actionlint": "🔍 workflow lint lives in NagoyAction: olnm actionlint … runs `nagoyaction actionlint …`."}
-_NAGOYA_INSTALL = """\
+# per command handed to NagoyAction: where it went, then how to install NagoyAction (help epilog and the missing-tool message)
+_NAGOYA_HINT = {command: moved + """
    install:  git clone https://github.com/myon-bioinformatics/NagoyAction && cd NagoyAction
              python3 tools/build_uv_tool.py build/nagoyaction-tool && uv tool install ./build/nagoyaction-tool
    or point at a checkout:  export NAGOYACTION=/path/to/NagoyAction/nagoyaction.py
-   closed network, from `hub bundle`:  export NAGOYACTION=/path/to/carry/local_forge.py"""
-NAGOYACTION_HINT = _NAGOYA_HEAD["hub"] + "\n" + _NAGOYA_INSTALL
+   closed network, from `hub bundle`:  export NAGOYACTION=/path/to/carry/local_forge.py""" for command, moved in (
+    ("hub", "🏠 the local forge now lives in NagoyAction: olnm hub … runs `nagoyaction hub …`."),
+    ("actionlint", "🔍 workflow lint lives in NagoyAction: olnm actionlint … runs `nagoyaction actionlint …`."))}
 
 
 def _nagoyaction() -> list[str] | None:
@@ -756,7 +758,7 @@ def _nagoyaction() -> list[str] | None:
 def _nagoya(command: str, *args: str) -> int:
     """`nagoyaction COMMAND ARGS` (hub | actionlint) with this terminal's stdio; 127 + install guidance when NagoyAction is missing."""
     if not (cmd := _nagoyaction()):
-        print(_NAGOYA_HEAD[command] + "\n" + _NAGOYA_INSTALL, file=sys.stderr)
+        print(_NAGOYA_HINT[command], file=sys.stderr)
         return 127
     if Path(cmd[-1]).name in ("local_forge.py", "local-forge"):  # the forge alone (e.g. carried by `hub bundle`) takes SUB directly
         if command != "hub":
@@ -817,12 +819,18 @@ def tools(name: str | None = None) -> dict:
     return result
 
 
-def mise(*args: str) -> int:
-    """Forward argv to mise without a shell, inheriting cwd, stdin/stdout/stderr and exit code."""
-    executable = shutil.which("mise")
+def _which_or_guide(name: str) -> str | None:
+    """Path of NAME on PATH; else its setup guide (tools NAME) goes to stderr and the caller returns 127."""
+    executable = shutil.which(name)
     if executable is None:
         with contextlib.redirect_stdout(sys.stderr):
-            tools("mise")
+            tools(name)
+    return executable
+
+
+def mise(*args: str) -> int:
+    """Forward argv to mise without a shell, inheriting cwd, stdin/stdout/stderr and exit code."""
+    if (executable := _which_or_guide("mise")) is None:
         return 127
     return subprocess.run([executable, *args]).returncode
 
@@ -833,10 +841,7 @@ _STDLIB_TOOLS = {'xprobe': {'repo': 'xprobe', 'command': 'xprobe', 'commit': 'e0
 
 
 def _stdlib_tool(name: str, *args: str) -> int:
-    executable = shutil.which("uv")
-    if executable is None:
-        with contextlib.redirect_stdout(sys.stderr):
-            tools("uv")
+    if (executable := _which_or_guide("uv")) is None:
         return 127
     tool = _STDLIB_TOOLS[name]
     source = f"git+https://github.com/myon-bioinformatics/{tool['repo']}.git@{tool['commit']}"
@@ -1061,6 +1066,7 @@ if [ "${_OLNM_NPM_WAS_SET-}" = x ]; then export npm_config_offline="$_OLNM_NPM_P
 fi
 unset _OLNM_OFFLINE _OLNM_UV_WAS_SET _OLNM_UV_PREVIOUS _OLNM_NPM_WAS_SET _OLNM_NPM_PREVIOUS
 fi""")
+    completed = "olnm olnm_offline olnm_like olnm_show olnm_dial hubdial miseuse miseglobal miseinstall miseexec miseoffline yourself"
     if shell == "zsh":
         parts.append('command_not_found_handler() { _olnm_cnf "$@"; }')
         parts.append(r'''_olnm_complete_zsh() {
@@ -1068,7 +1074,7 @@ fi""")
   candidates=("${(@f)$(python3 "$OLNM_PY" complete -- "${words[@]:0:$CURRENT}")}")
   (( ${#candidates} )) && compadd -- "${candidates[@]}"
 }
-if (( $+functions[compdef] )); then compdef _olnm_complete_zsh olnm olnm_offline olnm_like olnm_show olnm_dial hubdial miseuse miseglobal miseinstall miseexec miseoffline yourself; fi
+if (( $+functions[compdef] )); then compdef _olnm_complete_zsh ''' + completed + '''; fi
 ''')
     else:
         parts.append('command_not_found_handle() { _olnm_cnf "$@"; }')
@@ -1077,7 +1083,7 @@ if (( $+functions[compdef] )); then compdef _olnm_complete_zsh olnm olnm_offline
   COMPREPLY=()
   while IFS= read -r candidate; do COMPREPLY+=("$candidate"); done < <(python3 "$OLNM_PY" complete -- "${COMP_WORDS[@]:0:COMP_CWORD+1}")
 }
-complete -o default -F _olnm_complete_bash olnm olnm_offline olnm_like olnm_show olnm_dial hubdial miseuse miseglobal miseinstall miseexec miseoffline yourself
+complete -o default -F _olnm_complete_bash ''' + completed + '''
 ''')
     code = "\n".join(parts) + "\n"
     print(code, end="")
@@ -1267,20 +1273,24 @@ def build_parser() -> argparse.ArgumentParser:
     s = sp.add_parser("run", help="▶️ run one one-liner in bash"); s.add_argument("name"); s.add_argument("args", nargs=argparse.REMAINDER)
     s = sp.add_parser("call", help="🔌 call a function by name → JSON"); s.add_argument("fn"); s.add_argument("args", nargs="?", default="[]"); s.add_argument("--kwargs", default="{}")
     s = sp.add_parser("hub", help="🏠 local GitHub-like forge → nagoyaction hub (arguments and exit code passed through)",
-                      epilog=NAGOYACTION_HINT, formatter_class=argparse.RawDescriptionHelpFormatter)
+                      epilog=_NAGOYA_HINT["hub"], formatter_class=argparse.RawDescriptionHelpFormatter)
     s.add_argument("sub", choices=HUB_SUBS, metavar="sub", help=" | ".join(HUB_SUBS) + "; nagoyaction hub SUB --help for the rest")
     s.add_argument("args", nargs=argparse.REMAINDER)
     s = sp.add_parser("actionlint", help="🔍 lint .github/workflows → nagoyaction actionlint (best effort without GitHub; --strict, --all)",
-                      epilog=_NAGOYA_HEAD["actionlint"] + "\n" + _NAGOYA_INSTALL, formatter_class=argparse.RawDescriptionHelpFormatter)
+                      epilog=_NAGOYA_HINT["actionlint"], formatter_class=argparse.RawDescriptionHelpFormatter)
     s.add_argument("args", nargs=argparse.REMAINDER)
     return ap
+
+
+def _after_dashdash(args: list[str]) -> list[str]:
+    """ARGS without one leading `--` (the separator the CLI accepts before forwarded arguments)."""
+    return args[1:] if args[:1] == ["--"] else args
 
 
 def main(argv: list[str] | None = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
     if argv and argv[0] in _STDLIB_TOOLS:
-        args = argv[1:]
-        return _stdlib_tool(argv[0], *(args[1:] if args[:1] == ["--"] else args))
+        return _stdlib_tool(argv[0], *_after_dashdash(argv[1:]))
     if argv[:1] == ["hub"]:
         sub = argv[1] if len(argv) > 1 else ""
         # NagoyAction parses the rest (help, typos, exit codes). olnm keeps: unknown SUB hints, and --help before it is installed.
@@ -1289,8 +1299,7 @@ def main(argv: list[str] | None = None) -> int:
     if argv[:1] == ["actionlint"] and (not {"-h", "--help"} & set(argv[1:]) or _nagoyaction()):
         return _nagoya("actionlint", *argv[1:])  # NagoyAction parses everything; olnm answers --help only before it is installed
     if argv[:1] == ["yourself"]:
-        args = argv[1:]
-        return yourself(*(args[1:] if args[:1] == ["--"] else args))
+        return yourself(*_after_dashdash(argv[1:]))
     if argv[:1] == ["calc"]:
         # Only the leading --engine option belongs to the CLI; the rest is math.
         offset = 1
@@ -1312,11 +1321,11 @@ def main(argv: list[str] | None = None) -> int:
         case "sections": sections()
         case "net": net()
         case "doctor": doctor()
-        case "complete": complete(*(a.words[1:] if a.words[:1] == ["--"] else a.words))
+        case "complete": complete(*_after_dashdash(a.words))
         case "tools": tools(a.name)
-        case "mise": return mise(*(a.args[1:] if a.args[:1] == ["--"] else a.args))
+        case "mise": return mise(*_after_dashdash(a.args))
         case "calc":
-            tokens = a.expression[1:] if a.expression[:1] == ["--"] else a.expression
+            tokens = _after_dashdash(a.expression)
             if tokens:  # words or symbols on the command line: quote-free, same result as python -c / node -p
                 return calculate(*tokens, engine=a.engine)
             try:
