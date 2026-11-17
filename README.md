@@ -752,13 +752,11 @@ forge の管理は [NagoyAction](https://github.com/myon-bioinformatics/NagoyAct
 
 ```bash
 git clone https://github.com/myon-bioinformatics/NagoyAction
-cd NagoyAction
-python3 tools/build_uv_tool.py build/nagoyaction-tool
-uv tool install ./build/nagoyaction-tool
+uv tool install ./NagoyAction
 nagoyaction hub --help
 ```
 
-導入せずに clone だけ使う場合は `export NAGOYACTION=/path/to/NagoyAction/nagoyaction.py` を設定する（閉域網へ持ち込んだ `local_forge.py` も指定できる。後述）。どちらもない状態で `olnm hub ...` を実行すると、この導入方法を表示して終了コード 127 で止まる。
+導入せずに clone だけ使う場合は `export NAGOYACTION=/path/to/NagoyAction/nagoyaction.py` を設定する（閉域網へ持ち込んだ `nagoyaction.py` も指定できる。後述）。どちらもない状態で `olnm hub ...` を実行すると、この導入方法を表示して終了コード 127 で止まる。
 
 Gitea（既定）または Forgejo の Linux バイナリが必要。Go は不要。
 **通常ユーザーで実行する。** forge 本体は root 起動できない。
@@ -822,11 +820,11 @@ Issue / PR / labels の対象は cwd の登録済み repo。repo ls は全登録
 ```bash
 python3 -c 'import nagoyaction; raise SystemExit(nagoyaction.hub("issue", "new", "crash", "--body", "再現手順", "--label", "bug"))'
 python3 -c 'import nagoyaction; raise SystemExit(nagoyaction.hub("dial", "mirror"))'
-python3 -c 'import local_forge; print(local_forge.hub_repo_ls())'
+python3 -c 'import nagoyaction; print(nagoyaction.hub_repo_ls())'
 ```
 
 olnm 側に残る forge 関連の API は `hub_url()`（状態ファイルの port から URL を返すだけ）と、ダイヤルの `dial` / `dial_level` / `dial_label` / `read_dial`。
-`local_forge.hub_init()` の戻り値はトークン・パスワードを含む状態データなので、共有ログに保存しない。
+`nagoyaction.hub_init()` の戻り値はトークン・パスワードを含む状態データなので、共有ログに保存しない。
 
 ### hub サブコマンド全件
 
@@ -866,14 +864,14 @@ python3 "$OLNM_PY" hub bundle ./carry --flavor gitea --version 1.27.3
 carry/ を閉域側へコピーし、Linux amd64 の通常ユーザーで：
 
 ```sh
-python3 carry/local_forge.py install --from carry/gitea-1.27.3-linux-amd64
-python3 carry/local_forge.py init
-python3 carry/local_forge.py up
+python3 carry/nagoyaction.py hub install --from carry/gitea-1.27.3-linux-amd64
+python3 carry/nagoyaction.py hub init
+python3 carry/nagoyaction.py hub up
 ```
 
-bundle はバイナリ・.sha256・local_forge.py（NagoyAction の forge 単体、標準ライブラリのみ）を含む。olnm.py・Python・git 自体は別途必要。
-閉域側で olnm の `hub` / `hubdial` / `ghis` などを使うなら `export NAGOYACTION="$PWD/carry/local_forge.py"` を設定する。olnm はこのファイルにサブコマンドを直接渡す。
-amd64 以外は NagoyAction の Python API `local_forge.hub_bundle(..., arch="arm64")` などで明示し、取得元の対応を確認する。
+bundle はバイナリ・.sha256・nagoyaction.py（NagoyAction の 1 ファイル、標準ライブラリのみ）を含む。olnm.py・Python・git 自体は別途必要。
+閉域側で olnm の `hub` / `hubdial` / `ghis` などを使うなら `export NAGOYACTION="$PWD/carry/nagoyaction.py"` を設定する。clone と同じく `hub …` / `actionlint …` をそのまま渡す（ghlint も使える）。
+amd64 以外は NagoyAction の Python API `nagoyaction.hub_bundle(..., arch="arm64")` などで明示し、取得元の対応を確認する。
 forge なしでも gbundle / gunbundle で Git を持ち運べる。
 
 uvbundle は `uv tool run --from pip pip download` で wheels を取得する。初回は pip 自体の取得にもネットワークが必要。取得失敗時は失敗として終了する。
@@ -1115,7 +1113,7 @@ uv の Python 環境に Node/Bun/Rust が自動で含まれるわけでもない
 
 `ghlint` は今いるリポジトリの `.github/workflows` を `nagoyaction actionlint` で検査する（`python3 "$OLNM_PY" actionlint` と同じ）。NagoyAction の導入は hub と共通。
 GitHub に届かない閉域網でも止まらず、検査できなかった項目を `[skip]` と表示する。`ghlint --strict` は検査できないものを失敗にする。
-`NAGOYACTION` が持ち込んだ `local_forge.py` を指している場合は使えない（forge 単体のため）。NagoyAction の clone か uv ツールが必要。
+`hub bundle` で持ち込んだ `nagoyaction.py` を `NAGOYACTION` に指定しても使える（clone や uv ツールと同じ 1 ファイル）。
 
 ## 困ったとき
 
@@ -1184,7 +1182,7 @@ olnm.py の SHELL 内で関数の直前に `# <絵文字> 名前: 説明` を 1 
 `import olnm` 後の名前。シェル関数とは別の API。call public で同じ一覧を得られる。
 Python 欄の中身は `python3 -c 'import olnm; 表の中身'` として使う。call 欄は `python3 "$OLNM_PY" call` に続ける。
 Path の戻り値は CLI call で JSON 文字列、戻り値なしは null となる。
-forge の操作関数（install / init / repo / issue / pr など）は NagoyAction の `local_forge` / `nagoyaction.hub` にある。「Python から hub」を参照。
+forge の操作関数（install / init / repo / issue / pr など）は NagoyAction の `nagoyaction.py`（`nagoyaction.hub` と `hub_*` 関数）にある。「Python から hub」を参照。
 
 <!-- python-api:start -->
 | Python 署名 | Python ワンライナーの中身 | call に続ける引数 | 処理 |

@@ -740,16 +740,15 @@ FORGE_STATE = OLNM_HOME / "forge" / "state.json"  # written by NagoyAction; olnm
 HUB_SUBS = ("install", "bundle", "init", "up", "down", "status", "doctor", "logs", "dial", "repo", "api", "issue", "pr", "labels", "sync")
 # per command handed to NagoyAction: where it went, then how to install NagoyAction (help epilog and the missing-tool message)
 _NAGOYA_HINT = {command: moved + """
-   install:  git clone https://github.com/myon-bioinformatics/NagoyAction && cd NagoyAction
-             python3 tools/build_uv_tool.py build/nagoyaction-tool && uv tool install ./build/nagoyaction-tool
+   install:  git clone https://github.com/myon-bioinformatics/NagoyAction && uv tool install ./NagoyAction
    or point at a checkout:  export NAGOYACTION=/path/to/NagoyAction/nagoyaction.py
-   closed network, from `hub bundle`:  export NAGOYACTION=/path/to/carry/local_forge.py""" for command, moved in (
+   closed network, from `hub bundle`:  export NAGOYACTION=/path/to/carry/nagoyaction.py""" for command, moved in (
     ("hub", "🏠 the local forge now lives in NagoyAction: olnm hub … runs `nagoyaction hub …`."),
     ("actionlint", "🔍 workflow lint lives in NagoyAction: olnm actionlint … runs `nagoyaction actionlint …`."))}
 
 
 def _nagoyaction() -> list[str] | None:
-    """Command that runs NagoyAction: $NAGOYACTION (a command, nagoyaction.py or a carried local_forge.py), else `nagoyaction` on PATH."""
+    """Command that runs NagoyAction: $NAGOYACTION (a command, or nagoyaction.py from a checkout or a `hub bundle` carry), else `nagoyaction` on PATH."""
     if given := os.environ.get("NAGOYACTION"):
         return [sys.executable, given] if given.endswith(".py") else [given]
     return [found] if (found := shutil.which("nagoyaction")) else None
@@ -760,11 +759,6 @@ def _nagoya(command: str, *args: str) -> int:
     if not (cmd := _nagoyaction()):
         print(_NAGOYA_HINT[command], file=sys.stderr)
         return 127
-    if Path(cmd[-1]).name in ("local_forge.py", "local-forge"):  # the forge alone (e.g. carried by `hub bundle`) takes SUB directly
-        if command != "hub":
-            print(f"❌ {cmd[-1]} is the forge alone; olnm {command} needs nagoyaction (a NagoyAction checkout or its uv tool)", file=sys.stderr)
-            return 127
-        return subprocess.run([*cmd, *args]).returncode
     return subprocess.run([*cmd, command, *args]).returncode
 
 
