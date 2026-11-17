@@ -83,14 +83,16 @@ class ForgeDelegationTest(unittest.TestCase):
         self.assertEqual(result.returncode, 7, result.stderr)
         self.assertEqual(self.forwarded(), ["hub", "status"])
 
-    def test_carried_local_forge_py_takes_sub_directly(self):
-        # `hub bundle` carries local_forge.py into a closed network; it has no `forge` subcommand.
-        script = self.root / "carry" / "local_forge.py"
+    def test_carried_nagoyaction_py_is_the_whole_tool(self):
+        # 🎒 `hub bundle` carries nagoyaction.py itself (NagoyAction #58), so hub and actionlint go through as from a checkout.
+        script = self.root / "carry" / "nagoyaction.py"
         script.parent.mkdir()
         script.write_text(FAKE_NAGOYACTION.format(py=sys.executable, log=str(self.log)))
         result = self.olnm("hub", "repo", "ls", NAGOYACTION=str(script), PATH="/usr/bin:/bin")
         self.assertEqual(result.returncode, 7, result.stderr)
-        self.assertEqual(self.forwarded(), ["repo", "ls"])
+        self.assertEqual(self.forwarded(), ["hub", "repo", "ls"])
+        self.assertEqual(self.olnm("actionlint", NAGOYACTION=str(script), PATH="/usr/bin:/bin").returncode, 7)
+        self.assertEqual(self.forwarded(), ["actionlint"])
 
     def test_actionlint_forwards_exact_arguments_and_exit_code(self):
         result = self.olnm("actionlint", "--strict", "--root", "dir with space")
@@ -103,7 +105,7 @@ class ForgeDelegationTest(unittest.TestCase):
         self.assertIn("rc=7", result.stdout, result.stderr)
         self.assertEqual(self.forwarded(), ["actionlint", "--all", "--repeat", "3"])
 
-    def test_actionlint_without_nagoyaction_or_with_the_forge_alone(self):
+    def test_actionlint_without_nagoyaction(self):
         result = self.olnm("actionlint", PATH="/usr/bin:/bin")
         self.assertEqual(result.returncode, 127)
         self.assertIn("nagoyaction actionlint", result.stderr)
@@ -111,13 +113,6 @@ class ForgeDelegationTest(unittest.TestCase):
         helped = self.olnm("actionlint", "--help", PATH="/usr/bin:/bin")
         self.assertEqual(helped.returncode, 0)
         self.assertIn("usage: olnm actionlint", helped.stdout)
-        script = self.root / "carry" / "local_forge.py"  # what `hub bundle` carries has no lint
-        script.parent.mkdir()
-        script.write_text(FAKE_NAGOYACTION.format(py=sys.executable, log=str(self.log)))
-        result = self.olnm("actionlint", NAGOYACTION=str(script), PATH="/usr/bin:/bin")
-        self.assertEqual(result.returncode, 127)
-        self.assertIn("is the forge alone", result.stderr)
-        self.assertFalse(self.log.exists())
 
     def test_missing_nagoyaction_explains_how_to_install(self):
         result = self.olnm("hub", "status", PATH="/usr/bin:/bin")
