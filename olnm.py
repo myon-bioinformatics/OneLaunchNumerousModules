@@ -121,6 +121,8 @@ cli_args() { python3 "$OLNM_PY" cli_args "$@"; }
 ghi() { python3 "$OLNM_PY" ghi "$@"; }
 # 📦 markdown: single-file Markdown stdio CLI via uv's cached tool environment
 markdown() { python3 "$OLNM_PY" markdown "$@"; }
+# 📦 ontautology: OnTautoLogy CLI via uv's cached tool environment (exchange adds its RDF extra)
+ontautology() { python3 "$OLNM_PY" ontautology "$@"; }
 # 📦 ascii_artist: single-file ASCII CLI via uv's cached tool environment
 ascii_artist() { python3 "$OLNM_PY" ascii_artist "$@"; }
 # 📥 pyimp: check if module is importable and where (pyimp numpy)
@@ -830,7 +832,7 @@ def mise(*args: str) -> int:
 
 
 # BEGIN STDLIB TOOL SOURCES (reviewed commits, no registry or setup step for users)
-_STDLIB_TOOLS = {'xprobe': {'repo': 'xprobe', 'command': 'xprobe', 'commit': 'e077895583fb20113a38c75b57dd132e66ea2558'}, 'cli_args': {'repo': 'cli_args', 'command': 'cli_args', 'commit': 'a81a8b4adec0f5951eda0ed1c708f7497653812f'}, 'ghi': {'repo': 'gh_identity', 'command': 'ghi', 'commit': '2d66af6477a8e86abae557279e84c6407aad4efb'}, 'markdown': {'repo': 'markdown', 'command': 'md-market', 'commit': '8d46ef36126e4437be4ac18926e1f67f033815bb'}, 'ascii_artist': {'repo': 'ascii_artist', 'command': 'ascii_artist', 'commit': 'c728a4c541008c9ff1659398e27a9dce1f2f6f31'}}
+_STDLIB_TOOLS = {'xprobe': {'repo': 'xprobe', 'command': 'xprobe', 'commit': 'e077895583fb20113a38c75b57dd132e66ea2558'}, 'cli_args': {'repo': 'cli_args', 'command': 'cli_args', 'commit': 'a81a8b4adec0f5951eda0ed1c708f7497653812f'}, 'ghi': {'repo': 'gh_identity', 'command': 'ghi', 'commit': '2d66af6477a8e86abae557279e84c6407aad4efb'}, 'markdown': {'repo': 'markdown', 'command': 'md-market', 'commit': '8d46ef36126e4437be4ac18926e1f67f033815bb'}, 'ascii_artist': {'repo': 'ascii_artist', 'command': 'ascii_artist', 'commit': 'c728a4c541008c9ff1659398e27a9dce1f2f6f31'}, 'ontautology': {'repo': 'OnTautoLogy', 'command': 'ontautology', 'commit': '0bfc753d15f70a78022aaa3f7bc81766f30cef1f', 'extras': {'exchange': 'exchange'}}}
 # END STDLIB TOOL SOURCES
 
 
@@ -839,8 +841,15 @@ def _stdlib_tool(name: str, *args: str) -> int:
         return 127
     tool = _STDLIB_TOOLS[name]
     source = f"git+https://github.com/myon-bioinformatics/{tool['repo']}.git@{tool['commit']}"
+    if extra := tool.get("extras", {}).get(args[0] if args else ""):  # e.g. ontautology exchange → ontautology[exchange]
+        source = f"{tool['command']}[{extra}] @ {source}"
     offline = ["--offline"] if read_dial() <= 1 else []
     return subprocess.run([executable, *offline, "tool", "run", "--from", source, tool["command"], *args]).returncode
+
+
+def ontautology(*args: str) -> int:
+    """Run the OnTautoLogy CLI through uv's pinned tool cache (``exchange`` adds its RDF extra)."""
+    return _stdlib_tool("ontautology", *args)
 
 
 def xprobe(*args: str) -> int:

@@ -4,7 +4,7 @@
   <img src="assets/brand/olnm-icon.png" width="160" height="160" alt="olnm のアイコン：巻物に Python ロゴと周辺の開発ツール">
 </p>
 
-bash/zsh 用の **249 個のシェル関数**と、それを Python・Node から名前で呼べる **28 個の Python API**。
+bash/zsh 用の **250 個のシェル関数**と、それを Python・Node から名前で呼べる **29 個の Python API**。
 ローカル GitHub（Gitea / Forgejo）とワークフロー検査は NagoyAction（`nagoyaction hub` / `nagoyaction actionlint`）へ転送する。
 実装は `olnm.py` 1 ファイル、実行時の Python 外部依存はゼロ。
 Python 3.11 以降、Linux（Ubuntu / WSL の Ubuntu）の bash/zsh を対象とする。
@@ -1147,7 +1147,7 @@ python3 -m unittest discover -s tests -v
 ```
 
 forge 本体のテスト（偽 Forgejo による CLI / REST、実 Gitea 1.27.3 の CI）は NagoyAction 側にある。olnm のテストは、偽の `nagoyaction` で引数・終了コードの転送、forge があるときの dial の委譲と拒否、ダイヤル名を確認する。
-実際の forge 取得、外部サービスへの push、全 249 関数の副作用を伴う実行はこのテストでは行わない。docker / gh / systemctl などを呼ぶ関数は、偽のコマンドで渡す引数だけを確認する。
+実際の forge 取得、外部サービスへの push、全 250 関数の副作用を伴う実行はこのテストでは行わない。docker / gh / systemctl などを呼ぶ関数は、偽のコマンドで渡す引数だけを確認する。
 全関数の定義・名前の一意性、全 CLI 階層のヘルプ、代表例の実出力・終了コードを確認する。
 Python ワンライナー、Node の引数配列、JSON、stdin、空白を含むパス、uv の導入経路も確認する。
 追加の入力支援テストは bash / zsh の補完登録と候補、疑似端末での式入力と Tab、タイポ候補、不正JSON、Node/Bun不在時の案内を確認する。zsh / readline がない環境では該当ケースのみ skip。
@@ -1208,6 +1208,7 @@ forge の操作関数（install / init / repo / issue / pr など）は NagoyAct
 | `read_dial(default: int = 3) -> int` | `print(olnm.read_dial())` | `read_dial` | 現在のダイヤルを保存値の数字で（0 offline · 1 local · 2 mirror · 3 github）。未設定は 3。 |
 | `calculate(*args: str, engine: str = "python") -> int` | `olnm.calculate("6", "mul", "7")` | `olnm calc 6 mul 7` | 数値計算を表示し、エンジンの終了コードを返す。bash不要。 |
 | `run(name: str, *args: str) -> int` | `raise SystemExit(olnm.run("calc", "6", "mul", "7"))` | run サブコマンドを使う | Run one one-liner in a non-interactive bash (for Node / Bun / Python callers). |
+| `ontautology(*args: str) -> int` | `raise SystemExit(olnm.ontautology("exchange", "--help"))` | ontautology サブコマンドを使う | 固定コミットの OnTautoLogy CLI をuvのキャッシュ経由で実行（exchange は RDF の extra 付き）。 |
 | `xprobe(*args: str) -> int` | `raise SystemExit(olnm.xprobe("--help"))` | xprobe サブコマンドを使う | 固定コミットの単一ファイルツールをuvのキャッシュ経由で実行。 |
 | `cli_args(*args: str) -> int` | `raise SystemExit(olnm.cli_args("--help"))` | cli_args サブコマンドを使う | 固定コミットの単一ファイルツールをuvのキャッシュ経由で実行。 |
 | `ghi(*args: str) -> int` | `raise SystemExit(olnm.ghi("--help"))` | ghi サブコマンドを使う | 固定コミットの単一ファイルツールをuvのキャッシュ経由で実行。 |
@@ -1273,6 +1274,7 @@ forge の操作関数（install / init / repo / issue / pr など）は NagoyAct
 | `cli_args` | 📦 single-file CLI argument helpers via uv's cached tool environment |
 | `ghi` | 📦 single-file gh_identity CLI via uv's cached tool environment |
 | `markdown` | 📦 single-file Markdown stdio CLI via uv's cached tool environment |
+| `ontautology` | 📦 OnTautoLogy CLI via uv's cached tool environment (exchange adds its RDF extra) |
 | `ascii_artist` | 📦 single-file ASCII CLI via uv's cached tool environment |
 | `pyimp` | 📥 check if module is importable and where (pyimp numpy) |
 | `pymods` | 📦 list top-level importable third-party modules |
@@ -1558,3 +1560,9 @@ forge の操作関数（install / init / repo / issue / pr など）は NagoyAct
 | `miselock` | 🔒 🌍 create or refresh mise.lock versions, checksums and download URLs |
 | `misedoctor` | 🩺 diagnose mise installation and configuration |
 <!-- shell-catalog:end -->
+
+### OnTautoLogy の呼び出し
+
+`olnm ontautology …` は、ほかの単一ファイルツールと同じく固定コミットの OnTautoLogy を uv のキャッシュ経由で動かす（事前の導入は不要）。
+`exchange` のときだけ `ontautology[exchange]`（rdflib・neo4j）を付けるので、`olnm ontautology exchange --help` で RDF の入口を確認できる。
+`olnm run ontautology …` と Python の `olnm.ontautology(*args)` も同じ。
