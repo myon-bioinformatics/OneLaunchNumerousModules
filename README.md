@@ -1208,7 +1208,7 @@ forge の操作関数（install / init / repo / issue / pr など）は NagoyAct
 | `read_dial(default: int = 3) -> int` | `print(olnm.read_dial())` | `read_dial` | 現在のダイヤルを保存値の数字で（0 offline · 1 local · 2 mirror · 3 github）。未設定は 3。 |
 | `calculate(*args: str, engine: str = "python") -> int` | `olnm.calculate("6", "mul", "7")` | `olnm calc 6 mul 7` | 数値計算を表示し、エンジンの終了コードを返す。bash不要。 |
 | `run(name: str, *args: str) -> int` | `raise SystemExit(olnm.run("calc", "6", "mul", "7"))` | run サブコマンドを使う | Run one one-liner in a non-interactive bash (for Node / Bun / Python callers). |
-| `ontautology(*args: str) -> int` | `olnm.ontautology("exchange", "--help")` | ontautology サブコマンドを使う | 導入済みの OTL CLI を呼び出す。 |
+| `ontautology(*args: str) -> int` | `raise SystemExit(olnm.ontautology("exchange", "--help"))` | ontautology サブコマンドを使う | 固定コミットの OnTautoLogy CLI をuvのキャッシュ経由で実行（exchange は RDF の extra 付き）。 |
 | `xprobe(*args: str) -> int` | `raise SystemExit(olnm.xprobe("--help"))` | xprobe サブコマンドを使う | 固定コミットの単一ファイルツールをuvのキャッシュ経由で実行。 |
 | `cli_args(*args: str) -> int` | `raise SystemExit(olnm.cli_args("--help"))` | cli_args サブコマンドを使う | 固定コミットの単一ファイルツールをuvのキャッシュ経由で実行。 |
 | `ghi(*args: str) -> int` | `raise SystemExit(olnm.ghi("--help"))` | ghi サブコマンドを使う | 固定コミットの単一ファイルツールをuvのキャッシュ経由で実行。 |
@@ -1274,7 +1274,7 @@ forge の操作関数（install / init / repo / issue / pr など）は NagoyAct
 | `cli_args` | 📦 single-file CLI argument helpers via uv's cached tool environment |
 | `ghi` | 📦 single-file gh_identity CLI via uv's cached tool environment |
 | `markdown` | 📦 single-file Markdown stdio CLI via uv's cached tool environment |
-| `ontautology` | 📦 run the installed Python graph tool |
+| `ontautology` | 📦 OnTautoLogy CLI via uv's cached tool environment (exchange adds its RDF extra) |
 | `ascii_artist` | 📦 single-file ASCII CLI via uv's cached tool environment |
 | `pyimp` | 📥 check if module is importable and where (pyimp numpy) |
 | `pymods` | 📦 list top-level importable third-party modules |
@@ -1563,6 +1563,6 @@ forge の操作関数（install / init / repo / issue / pr など）は NagoyAct
 
 ### OnTautoLogy の呼び出し
 
-OTL の checkout で `uv tool install '.[exchange]'` した後、
-`olnm ontautology exchange --help` で入口を確認できる。
-`olnm run ontautology …` と Python の `olnm.ontautology(*args)` も同じ CLI に委譲する。
+`olnm ontautology …` は、ほかの単一ファイルツールと同じく固定コミットの OnTautoLogy を uv のキャッシュ経由で動かす（事前の導入は不要）。
+`exchange` のときだけ `ontautology[exchange]`（rdflib・neo4j）を付けるので、`olnm ontautology exchange --help` で RDF の入口を確認できる。
+`olnm run ontautology …` と Python の `olnm.ontautology(*args)` も同じ。
