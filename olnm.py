@@ -121,6 +121,8 @@ cli_args() { python3 "$OLNM_PY" cli_args "$@"; }
 ghi() { python3 "$OLNM_PY" ghi "$@"; }
 # 📦 markdown: single-file Markdown stdio CLI via uv's cached tool environment
 markdown() { python3 "$OLNM_PY" markdown "$@"; }
+# 📦 ontautology: run the installed Python graph tool
+ontautology() { python3 "$OLNM_PY" ontautology "$@"; }
 # 📦 ascii_artist: single-file ASCII CLI via uv's cached tool environment
 ascii_artist() { python3 "$OLNM_PY" ascii_artist "$@"; }
 # 📥 pyimp: check if module is importable and where (pyimp numpy)
@@ -843,6 +845,15 @@ def _stdlib_tool(name: str, *args: str) -> int:
     return subprocess.run([executable, *offline, "tool", "run", "--from", source, tool["command"], *args]).returncode
 
 
+def ontautology(*args: str) -> int:
+    """Delegate to the installed OTL CLI, preserving its interpreter and extras."""
+    executable = shutil.which("ontautology")
+    if executable is None:
+        print("Install the OnTautoLogy CLI with its exchange extra for RDF support.", file=sys.stderr)
+        return 127
+    return subprocess.run([executable, *args]).returncode
+
+
 def xprobe(*args: str) -> int:
     """Run the default xprobe command through uv's pinned tool cache."""
     return _stdlib_tool("xprobe", *args)
@@ -1260,6 +1271,7 @@ def build_parser() -> argparse.ArgumentParser:
     s = sp.add_parser("tools", help="optional uv/mise/Node/Bun/Go/Rust setup and project-local usage (no installation)"); s.add_argument("name", nargs="?", choices=["uv", "mise", "node", "npm", "npx", "bun", "bunx", "go", "rust", "rustc", "cargo", "rustup"])
     s = sp.add_parser("mise", help="forward arguments to mise (exec can auto-install; use --help for olnm wrapper help)"); s.add_argument("args", nargs=argparse.REMAINDER)
     s = sp.add_parser("yourself", help="bundled environment report; accepts upstream yourself options directly"); s.add_argument("args", nargs=argparse.REMAINDER)
+    sp.add_parser("ontautology", help="delegate to the installed OTL CLI")
     for name in _STDLIB_TOOLS:
         s = sp.add_parser(name, help="default stdlib-only command via uv's pinned tool cache"); s.add_argument("args", nargs=argparse.REMAINDER)
     s = sp.add_parser("dial", help="🎛️ show / set: offline · local · mirror · github (0-3 also work)")
@@ -1283,6 +1295,8 @@ def _after_dashdash(args: list[str]) -> list[str]:
 
 def main(argv: list[str] | None = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
+    if argv[:1] == ["ontautology"] and argv[1:] not in (["--help"], ["-h"]):
+        return ontautology(*_after_dashdash(argv[1:]))
     if argv and argv[0] in _STDLIB_TOOLS:
         return _stdlib_tool(argv[0], *_after_dashdash(argv[1:]))
     if argv[:1] == ["hub"]:
