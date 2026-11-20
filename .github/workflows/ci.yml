@@ -28,3 +28,8 @@ jobs:
         env:
           OLNM_TEST_UV: '1'
         run: uv run --no-project python -m unittest discover -v
+      - name: Smoke test the pinned ONTO launcher
+        run: |
+          python olnm.py onto --help
+          python olnm.py onto versions --json > "$RUNNER_TEMP/onto-versions.json"
+          python -c 'import json, sys; assert len(json.load(open(sys.argv[1]))["otl"]["commit"]) == 40' "$RUNNER_TEMP/onto-versions.json"

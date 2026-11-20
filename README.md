@@ -1274,6 +1274,7 @@ forge の操作関数（install / init / repo / issue / pr など）は NagoyAct
 | `cli_args` | 📦 single-file CLI argument helpers via uv's cached tool environment |
 | `ghi` | 📦 single-file gh_identity CLI via uv's cached tool environment |
 | `markdown` | 📦 single-file Markdown stdio CLI via uv's cached tool environment |
+| `onto` | 📦 ONTO graph tools and its pinned OTL route via uv |
 | `ontautology` | 📦 OnTautoLogy CLI via uv's cached tool environment (exchange adds its RDF extra) |
 | `ascii_artist` | 📦 single-file ASCII CLI via uv's cached tool environment |
 | `pyimp` | 📥 check if module is importable and where (pyimp numpy) |
@@ -1566,3 +1567,11 @@ forge の操作関数（install / init / repo / issue / pr など）は NagoyAct
 `olnm ontautology …` は、ほかの単一ファイルツールと同じく固定コミットの OnTautoLogy を uv のキャッシュ経由で動かす（事前の導入は不要）。
 `exchange` のときだけ `ontautology[exchange]`（rdflib・neo4j）を付けるので、`olnm ontautology exchange --help` で RDF の入口を確認できる。
 `olnm run ontautology …` と Python の `olnm.ontautology(*args)` も同じ。
+
+### ONTO の起動
+
+`olnm onto versions --json` は利用する OTL の版を表示する。
+`olnm onto exchange export neo4j trial --format json` は接続設定済みの
+Neo4jからグラフを JSON として標準出力へ書く。
+`olnm onto otl …` は ONTO が指定した OTL へ引数を渡す。
+既存の `olnm ontautology` は従来の固定版を使う。
