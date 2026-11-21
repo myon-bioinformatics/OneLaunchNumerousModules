@@ -347,8 +347,8 @@ trimw() { sed -i 's/[ \t]*$//' "$@"; }
 lower() { tr '[:upper:]' '[:lower:]'; }
 # 🔡 upper: stdin → uppercase
 upper() { tr '[:lower:]' '[:upper:]'; }
-# 🔐 b64: base64 encode (b64 text) or decode stdin (b64 -d)
-b64() { [ "$1" = -d ] && base64 -d || printf '%s' "$*" | base64; }
+# 🔐 b64: encode stdin or text arguments as Base64, or decode stdin with b64 -d
+b64() { if [ "$#" -eq 0 ]; then base64; elif [ "$1" = -d ]; then base64 -d; else printf '%s' "$*" | base64; fi; }
 # 🌐 urlenc: url-encode string
 urlenc() { python3 -c 'import sys,urllib.parse;print(urllib.parse.quote(sys.argv[1],safe=""))' "$*"; }
 # 🌐 urldec: url-decode string

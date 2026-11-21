@@ -53,6 +53,21 @@ class TestHelpers(unittest.TestCase):
         self.assertEqual(r.returncode, 127)
         self.assertIn("did you mean: uvtest", r.stderr)
 
+    def test_b64_binary_pipe_and_invalid_input(self):
+        data = bytes(range(256))
+        for shell in ["bash"] + (["zsh"] if shutil.which("zsh") else []):
+            init = subprocess.check_output([sys.executable, PY, "init", shell], text=True)
+            def run(command, raw=b""):
+                return subprocess.run([shell, "-c", init + "\n" + command], input=raw, capture_output=True)
+            with self.subTest(shell=shell):
+                result = run("set -o pipefail; b64 | b64 -d", data)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(result.stdout, data)
+                self.assertEqual(run("b64 hello world").stdout.strip(), b"aGVsbG8gd29ybGQ=")
+                invalid = run("b64 -d", b"!")
+                self.assertNotEqual(invalid.returncode, 0)
+                self.assertEqual(invalid.stdout, b"")
+
     def test_one_liners_work(self):
         cases = {"calc '2**10'": "1024", "calc --engine node '2**10'": "1024", "printf '1\\n2\\n' | nums": "n=2 sum=3 avg=1.5 min=1 max=2",
                  "echo 'x a@b.co 10.0.0.1' | redact": "x <email> <ip>", "printf 'x=1\\n' | t2j | tr -d ' \\n'": '{"x":1}'}
