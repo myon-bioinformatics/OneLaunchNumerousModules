@@ -309,7 +309,7 @@ class StdlibCommands(unittest.TestCase):
         self.uv.write_text(self.uv.read_text().replace(
             '"cwd":os.getcwd()', '"cwd":os.getcwd(),"offline":os.environ.get("UV_OFFLINE")'))
         self.env.pop("UV_OFFLINE", None)
-        ref = "git+https://github.com/myon-bioinformatics/ONTO.git@1119401536442d23ce6f8db77085440d476dea43"
+        ref = "git+https://github.com/myon-bioinformatics/ONTO.git@d94daca258fd98396111e47a30777d9aa8a13fd7"
         cases = [
             ("3", ["exchange", "export", "neo4j", "space scope", "--format", "json"], "onto-shared[exchange] @ " + ref),
             ("0", ["otl", "exchange", "--help"], ref),
