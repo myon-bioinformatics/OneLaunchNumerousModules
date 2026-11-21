@@ -305,6 +305,27 @@ class StdlibCommands(unittest.TestCase):
             r=self.cli('ontautology',*args)
             self.assertEqual(r.returncode,0,r.stderr);self.assertEqual(json.loads(r.stdout)['argv'][3:5],[source,'ontautology'])
 
+    def test_onto_uses_distribution_extra_and_propagates_offline(self):
+        self.uv.write_text(self.uv.read_text().replace(
+            '"cwd":os.getcwd()', '"cwd":os.getcwd(),"offline":os.environ.get("UV_OFFLINE")'))
+        self.env.pop("UV_OFFLINE", None)
+        ref = "git+https://github.com/myon-bioinformatics/ONTO.git@1119401536442d23ce6f8db77085440d476dea43"
+        cases = [
+            ("3", ["exchange", "export", "neo4j", "space scope", "--format", "json"], "onto-shared[exchange] @ " + ref),
+            ("0", ["otl", "exchange", "--help"], ref),
+            ("1", ["otl", "check", "sample.json"], ref),
+        ]
+        for dial, args, source in cases:
+            with self.subTest(dial=dial, args=args):
+                (self.work / "dial").write_text(dial)
+                result = self.cli("onto", *args)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                observed = json.loads(result.stdout)
+                offline = dial in {"0", "1"}
+                expected = ["--offline"] if offline else []
+                self.assertEqual(observed["argv"], [*expected, "tool", "run", "--from", source, "onto", *args])
+                self.assertEqual(observed["offline"], "1" if offline else None)
+
     def test_dial_zero_uses_uv_offline_cache_mode(self):
         (self.work/'dial').write_text('0\n');r=self.cli('xprobe','--help')
         self.assertEqual(r.returncode,0,r.stderr);self.assertEqual(json.loads(r.stdout)['argv'][0],'--offline')
@@ -315,7 +336,7 @@ class StdlibCommands(unittest.TestCase):
         self.assertFalse((self.work/'state').exists())
 
     def test_catalog_has_only_fixed_user_repository_sources(self):
-        self.assertEqual(set(olnm._STDLIB_TOOLS),{'xprobe','cli_args','ghi','markdown','ascii_artist','ontautology'})
+        self.assertEqual(set(olnm._STDLIB_TOOLS),{'xprobe','cli_args','ghi','markdown','ascii_artist','ontautology','onto'})
         for name,t in olnm._STDLIB_TOOLS.items():
             self.assertRegex(t['commit'],r'^[a-f0-9]{40}$');self.assertIn(name,olnm.names());self.assertIn(name,olnm.public())
 
