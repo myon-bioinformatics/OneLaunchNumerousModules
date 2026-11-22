@@ -1412,7 +1412,7 @@ forge の操作関数（install / init / repo / issue / pr など）は NagoyAct
 | `trimw` | ✂️ strip trailing whitespace in files (trimw *.py) |
 | `lower` | 🔡 stdin → lowercase |
 | `upper` | 🔡 stdin → uppercase |
-| `b64` | 🔐 base64 encode (b64 text) or decode stdin (b64 -d) |
+| `b64` | 🔐 encode stdin or text arguments as Base64, or decode stdin with b64 -d |
 | `urlenc` | 🌐 url-encode string |
 | `urldec` | 🌐 url-decode string |
 | `sha` | 🔐 sha256 of files |
