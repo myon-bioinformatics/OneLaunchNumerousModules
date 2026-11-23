@@ -33,3 +33,32 @@ jobs:
           python olnm.py onto --help
           python olnm.py onto versions --json > "$RUNNER_TEMP/onto-versions.json"
           python -c 'import json, sys; assert len(json.load(open(sys.argv[1]))["otl"]["commit"]) == 40' "$RUNNER_TEMP/onto-versions.json"
+      - name: Smoke test Turtle piping online and from the warmed cache
+        run: |
+          set -o pipefail
+          smoke_dir=$(mktemp -d)
+          export DIAL_FILE="$smoke_dir/dial"
+          export UV_CACHE_DIR="$smoke_dir/cache"
+          export UV_TOOL_DIR="$smoke_dir/tools"
+          unset UV_OFFLINE
+
+          check_pipe() {
+            printf '%s\n' '{"premises":[["OR",["NOT","cat"],"mammal"],"cat"],"conclusion":"mammal"}' |
+              python olnm.py onto otl entails - --ttl |
+              python olnm.py onto exchange query - 'ASK { ?check <urn:otl:verdict> <urn:otl:entailed> }' |
+              python -c 'import json, sys; assert json.load(sys.stdin)["boolean"] is True'
+          }
+
+          for dial in 3 0 1; do
+            printf '%s\n' "$dial" > "$DIAL_FILE"
+            echo "Checking Turtle pipe at dial $dial"
+            check_pipe
+          done
+
+          status=0
+          printf '%s\n' '<urn:s> <urn:p> [' |
+            python olnm.py onto exchange query - 'ASK { ?s ?p ?o }' \
+              > "$smoke_dir/bad.out" 2> "$smoke_dir/bad.err" || status=$?
+          test "$status" -eq 2
+          test ! -s "$smoke_dir/bad.out"
+          grep -F 'Invalid Turtle on stdin' "$smoke_dir/bad.err"
