@@ -180,7 +180,7 @@ class TestUvLifecycle(IsolatedInvocation):
         result = uv("run", "--no-project", source / "olnm.py", "calc", "6", "mul", "7")
         self.assertEqual(result.stdout.strip(), "42")
         uv("tool", "install", ".", cwd=source)
-        self.assertIn("one-linear-numerous-memo", uv("tool", "list").stdout)
+        self.assertIn("one-launch-numerous-modules", uv("tool", "list").stdout)
         self.assertEqual(self.execute("olnm", "calc", "6", "mul", "7").stdout.strip(), "42")
         result = self.execute("olnm", "call", "like", '["uvtets"]')
         self.assertEqual(json.loads(result.stdout)[0], "uvtest")
@@ -209,12 +209,12 @@ class TestUvLifecycle(IsolatedInvocation):
         self.assertEqual(result.stdout.strip(), "42")
         # The installation must work away from the source directory.
         self.assertEqual(json.loads(uv("run", "olnm", "call", "names", cwd=project).stdout)[0], "olnm")
-        uv("lock", "--upgrade-package", "one-linear-numerous-memo", cwd=project)
-        uv("sync", "--reinstall-package", "one-linear-numerous-memo", cwd=project)
-        uv("remove", "one-linear-numerous-memo", cwd=project)
-        uv("tool", "uninstall", "one-linear-numerous-memo")
+        uv("lock", "--upgrade-package", "one-launch-numerous-modules", cwd=project)
+        uv("sync", "--reinstall-package", "one-launch-numerous-modules", cwd=project)
+        uv("remove", "one-launch-numerous-modules", cwd=project)
+        uv("tool", "uninstall", "one-launch-numerous-modules")
         self.assertFalse((self.work / "bin" / "olnm").exists())
-        self.assertNotIn("one-linear-numerous-memo", uv("tool", "list").stdout)
+        self.assertNotIn("one-launch-numerous-modules", uv("tool", "list").stdout)
 
 
 # ─── 🌐 Pages artifact ───
@@ -245,7 +245,7 @@ class PagesAssetsTests(unittest.TestCase):
             icons = Icons()
             icons.feed((stage / 'docs/index.html').read_text())
             self.assertEqual(len(icons.hrefs), 2)
-            for base in ('https://example.test/', 'https://example.test/OneLinearNumerousMemo/'):
+            for base in ('https://example.test/', 'https://example.test/OneLaunchNumerousModules/'):
                 for href in icons.hrefs:
                     with self.subTest(base=base, href=href):
                         resolved = urljoin(base, href)

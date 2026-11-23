@@ -1,4 +1,4 @@
-# 🧷 OneLinearNumerousMemo (olnm)
+# 🧷 OneLaunchNumerousModules (olnm)
 
 <p align="center">
   <img src="assets/brand/olnm-icon.png" width="160" height="160" alt="olnm のアイコン：巻物に Python ロゴと周辺の開発ツール">
@@ -12,7 +12,10 @@ macOS では GNU コマンドとの差異があり、PowerShell/cmd からシェ
 Node / Bun / gh / Docker / fzf などは、それを使う関数を実行するときだけ必要。
 
 
-利用手順の切り替え・再現記録: [olnm 利用・検証ガイド](https://myon-bioinformatics.github.io/OneLinearNumerousMemo/)
+olnm は **One Launch Numerous Modules** の略称（旧称: `OneLinearNumerousMemo`）。
+コマンド名 `olnm`・モジュール名 `olnm.py`・環境変数 `OLNM_*`・設定ディレクトリ `~/.olnm` はそのまま継続する。
+
+利用手順の切り替え・再現記録: [olnm 利用・検証ガイド](https://myon-bioinformatics.github.io/OneLaunchNumerousModules/)
 
 ## 概念図
 
@@ -57,7 +60,7 @@ Node / Bun / gh / Docker / fzf などは、それを使う関数を実行する�
 
 ```sh
 mkdir -p "$HOME/.local/share/olnm"
-curl -fL https://raw.githubusercontent.com/myon-bioinformatics/OneLinearNumerousMemo/main/olnm.py -o "$HOME/.local/share/olnm/olnm.py"
+curl -fL https://raw.githubusercontent.com/myon-bioinformatics/OneLaunchNumerousModules/main/olnm.py -o "$HOME/.local/share/olnm/olnm.py"
 python3 "$HOME/.local/share/olnm/olnm.py" calc 6 mul 7
 ```
 
@@ -73,8 +76,8 @@ python3 "$OLNM_PY" like uvtets
 最後のコマンドには `uvtest` が候補として出る。clone 方式なら次でも同じように使える。
 
 ```sh
-git clone https://github.com/myon-bioinformatics/OneLinearNumerousMemo.git
-cd OneLinearNumerousMemo
+git clone https://github.com/myon-bioinformatics/OneLaunchNumerousModules.git
+cd OneLaunchNumerousModules
 export OLNM_PY="$PWD/olnm.py"
 python3 "$OLNM_PY" calc 6 mul 7
 ```
@@ -82,7 +85,7 @@ python3 "$OLNM_PY" calc 6 mul 7
 **1 行だけで取得から実行まで：**
 
 ```sh
-mkdir -p "$HOME/.local/share/olnm" && curl -fL https://raw.githubusercontent.com/myon-bioinformatics/OneLinearNumerousMemo/main/olnm.py -o "$HOME/.local/share/olnm/olnm.py" && python3 "$HOME/.local/share/olnm/olnm.py" calc 6 mul 7
+mkdir -p "$HOME/.local/share/olnm" && curl -fL https://raw.githubusercontent.com/myon-bioinformatics/OneLaunchNumerousModules/main/olnm.py -o "$HOME/.local/share/olnm/olnm.py" && python3 "$HOME/.local/share/olnm/olnm.py" calc 6 mul 7
 ```
 
 `main` は更新される。版を固定する場合は URL の `/main/` を、確認したコミットの完全な SHA に置き換える。
@@ -98,7 +101,7 @@ mkdir -p "$HOME/.local/share/olnm" && curl -fL https://raw.githubusercontent.com
 | JSON を取得 | `python3 "$OLNM_PY" call like '["uvtets"]'` | 引数は JSON 配列 | stdout は JSON、説明表示は stderr |
 | uv でファイル実行 | `uv run --no-project "$OLNM_PY" calc 6 mul 7` | uv | ファイル方式と同じ |
 | 常用コマンドを登録 | `uv tool install .` | clone したルート | PATH 上に `olnm` コマンド |
-| 他プロジェクトへ依存登録 | `uv add /絶対パス/OneLinearNumerousMemo` | 利用側の uv プロジェクト | `uv run python -c 'import olnm; ...'` |
+| 他プロジェクトへ依存登録 | `uv add /絶対パス/OneLaunchNumerousModules` | 利用側の uv プロジェクト | `uv run python -c 'import olnm; ...'` |
 
 **`calc` はCLIサブコマンドとシェル関数、`calculate` はPython API。**
 計算は `olnm.py calc 6 mul 7`、Python からは `olnm.calculate("6", "mul", "7")` と呼ぶ。
@@ -221,7 +224,7 @@ uvx --from . olnm calc 2 pow 10
 ```
 
 `uv tool install .` で登録済みなら `command olnm calc 6 mul 7`。
-利用側プロジェクトで `uv add /絶対パス/OneLinearNumerousMemo` 済みなら
+利用側プロジェクトで `uv add /絶対パス/OneLaunchNumerousModules` 済みなら
 `uv run olnm calc 6 mul 7` または上記 Python ワンライナーを `uv run python -c ...` で実行する。
 `calc` CLI と `calculate()` は bash を起動せず、Python エンジンは実行中の Python を使う。
 `olnm.run("calc", "6", "mul", "7")` も互換の `run` 経由で利用できる（こちらは bash が必要）。
@@ -496,7 +499,7 @@ olnm calc 6 mul 7
 olnm call like '["uvtets"]'
 ```
 
-**パッケージ名は `one-linear-numerous-memo`、コマンド名と import 名は `olnm`。**
+**パッケージ名は `one-launch-numerous-modules`、コマンド名と import 名は `olnm`。**
 ツール用 Python 環境と普段の python3 の環境は別。
 tool install だけでは `python3 -c 'import olnm'` がどこからでも成功するようにはならない。
 import 目的なら次節の uv add を使う。
@@ -506,7 +509,7 @@ import 目的なら次節の uv add を使う。
 clone なしで導入する場合：
 
 ```sh
-uv tool install 'git+https://github.com/myon-bioinformatics/OneLinearNumerousMemo.git@main'
+uv tool install 'git+https://github.com/myon-bioinformatics/OneLaunchNumerousModules.git@main'
 olnm calc 6 mul 7
 ```
 
@@ -525,7 +528,7 @@ uvx --from . olnm call like '["uvtets"]'
 GitHub のソースを使う場合：
 
 ```sh
-uvx --from 'git+https://github.com/myon-bioinformatics/OneLinearNumerousMemo.git@main' olnm ls python
+uvx --from 'git+https://github.com/myon-bioinformatics/OneLaunchNumerousModules.git@main' olnm ls python
 ```
 
 ### 登録後にシェル関数も使う
@@ -552,13 +555,20 @@ zsh は `~/.zshrc` と `init zsh`。ファイル方式の登録行と併用せ�
 | 導入元 | 更新コマンド | 注意 |
 |---|---|---|
 | ローカル clone | `git pull --ff-only` → `uv tool install --force .` | ソースのあるディレクトリで実行 |
-| GitHub の @main | `uv tool upgrade one-linear-numerous-memo` | 登録元のブランチから更新 |
-| SHA 固定 | `uv tool install --force 'git+https://github.com/myon-bioinformatics/OneLinearNumerousMemo.git@新しい完全SHA'` | SHA を自分で更新 |
+| GitHub の @main | `uv tool upgrade one-launch-numerous-modules` | 登録元のブランチから更新 |
+| SHA 固定 | `uv tool install --force 'git+https://github.com/myon-bioinformatics/OneLaunchNumerousModules.git@新しい完全SHA'` | SHA を自分で更新 |
 | シェル関数定義 | `eval "$(command olnm init bash)"` | 更新後に再登録。zsh なら zsh |
 
 ```sh
 uv tool list
+uv tool uninstall one-launch-numerous-modules
+```
+
+旧パッケージ名 `one-linear-numerous-memo` から移行する場合：
+
+```sh
 uv tool uninstall one-linear-numerous-memo
+uv tool install 'git+https://github.com/myon-bioinformatics/OneLaunchNumerousModules.git@main'
 ```
 
 削除時は rc ファイルの init 行も削除し、新しいターミナルを開く。
@@ -572,7 +582,7 @@ uv tool uninstall one-linear-numerous-memo
 `OLNM_SOURCE` は clone 済みリポジトリの絶対パスに置き換える。
 
 ```sh
-export OLNM_SOURCE="$HOME/src/OneLinearNumerousMemo"
+export OLNM_SOURCE="$HOME/src/OneLaunchNumerousModules"
 uv init --bare --python 3.11 olnm-demo
 cd olnm-demo
 uv add "$OLNM_SOURCE"
@@ -584,7 +594,7 @@ uv run olnm call names
 GitHub から登録するなら uv add の行を次に置き換える。
 
 ```sh
-uv add 'git+https://github.com/myon-bioinformatics/OneLinearNumerousMemo.git@main'
+uv add 'git+https://github.com/myon-bioinformatics/OneLaunchNumerousModules.git@main'
 ```
 
 開発中の変更を直ちに反映するなら `uv add --editable "$OLNM_SOURCE"`。
@@ -601,14 +611,14 @@ uv run --no-project --with "$OLNM_SOURCE" python -c 'import olnm; olnm.like("uvt
 ```sh
 uv sync --locked
 uv run --locked python -c 'import olnm; print(len(olnm.names()))'
-uv lock --upgrade-package one-linear-numerous-memo
+uv lock --upgrade-package one-launch-numerous-modules
 uv sync
-uv remove one-linear-numerous-memo
+uv remove one-launch-numerous-modules
 ```
 
 利用側で `uv.lock` をコミットする。GitHub @main を登録しても通常実行は lock の固定コミットを使う。
 最新 main の採用は lock 更新後にテストする。
-ローカル通常インストールの再構築には `uv sync --reinstall-package one-linear-numerous-memo`。
+ローカル通常インストールの再構築には `uv sync --reinstall-package one-launch-numerous-modules`。
 uv remove はそのプロジェクトの依存を削除する。別途登録した uv tool は残る。
 
 ## uv 関数で実際の作業をする
@@ -686,7 +696,7 @@ run は子コマンドの終了コードを返す。call の数値の戻り値�
 
 Node、Bun、Go、Rust、uv、mise は PATH 上の実行ファイルとバージョンを表示する。見つからない場合は `not found on PATH` と表示し、導入や更新は行わない。mise にインストール済みでも PATH に有効化されていないランタイムは、この表示では確認できない。
 
-表示された起動ファイルから不要な olnm の設定を外し、新しいシェルを開く。uv に登録するには `uv tool install --force 'git+https://github.com/myon-bioinformatics/OneLinearNumerousMemo.git@main'` を実行する。PATH に見つからない場合は `uv tool update-shell` を実行して新しいシェルを開く。診断は任意ツールが見つからなくても成功終了する。
+表示された起動ファイルから不要な olnm の設定を外し、新しいシェルを開く。uv に登録するには `uv tool install --force 'git+https://github.com/myon-bioinformatics/OneLaunchNumerousModules.git@main'` を実行する。PATH に見つからない場合は `uv tool update-shell` を実行して新しいシェルを開く。診断は任意ツールが見つからなくても成功終了する。
 
 
 ## ダイヤルと保存先
@@ -1084,10 +1094,10 @@ uv の Python 環境に Node/Bun/Rust が自動で含まれるわけでもない
 | 導入方法 | 実行する場所 | 更新と再読み込み |
 |---|---|---|
 | 手動保存した olnm.py | 保存ファイルへ書ける場所。cwd 不問 | OLNM_URL を確認した raw URL に設定 → olnm_update。新ファイルの help が通った場合のみ置換して reload |
-| uv tool + Git の @main | cwd 不問 | uv tool upgrade one-linear-numerous-memo → eval "$(command olnm init bash)" |
+| uv tool + Git の @main | cwd 不問 | uv tool upgrade one-launch-numerous-modules → eval "$(command olnm init bash)" |
 | uv tool + ローカル clone | その clone | git pull --ff-only → uv tool install --force . → init を再度 eval |
-| SHA 固定の uv tool | cwd 不問 | uv tool install --force 'git+https://github.com/myon-bioinformatics/OneLinearNumerousMemo.git@新SHA' → init を再度 eval |
-| uv add の利用側 | 利用側の pyproject.toml / uv.lock のある場所 | uv lock --upgrade-package one-linear-numerous-memo → uv sync → テスト |
+| SHA 固定の uv tool | cwd 不問 | uv tool install --force 'git+https://github.com/myon-bioinformatics/OneLaunchNumerousModules.git@新SHA' → init を再度 eval |
+| uv add の利用側 | 利用側の pyproject.toml / uv.lock のある場所 | uv lock --upgrade-package one-launch-numerous-modules → uv sync → テスト |
 
 `olnm_update` の対象は手動保存ファイル。uv 管理の site-packages や Git checkout をこの関数で書き換えず、導入方法に対応する手段を使う。
 `main` 参照でも uv.lock がある通常実行はロック済みコミットを使う。更新後の SHA と挙動を確認し、lock をコミットする。

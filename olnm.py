@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""olnm 🧷 OneLinearNumerousMemo — one Python file: a few hundred bash/zsh one-liners + a dial for closed networks.
+"""olnm 🧷 OneLaunchNumerousModules — one Python file: bash/zsh one-liners, standard-library tool launcher, and a dial for closed networks.
 
     curl -fsSL <RAW_URL>/olnm.py -o ~/.olnm.py && echo 'eval "$(python3 ~/.olnm.py init)"' >> ~/.bashrc   # or ~/.zshrc
 
@@ -64,7 +64,7 @@ olnm_reload() { eval "$(python3 "$OLNM_PY" init "$([ -n "${ZSH_VERSION-}" ] && e
 # 📝 olnm_edit: open olnm.py in $EDITOR
 olnm_edit() { "${EDITOR:-vi}" "$OLNM_PY" && olnm_reload; }
 # ⬇️ olnm_update: 🌍 re-download olnm.py from $OLNM_URL and reload
-olnm_update() { [ -n "${OLNM_URL:-}" ] || { printf '%s\n' 'File install: set OLNM_URL to the reviewed raw olnm.py URL, then olnm_update.' 'uv tool install: use uv tool upgrade one-linear-numerous-memo; then eval "$(command olnm init)".' >&2; return 1; }; curl -fsSL "$OLNM_URL" -o "$OLNM_PY.new" && python3 "$OLNM_PY.new" --help >/dev/null && mv "$OLNM_PY.new" "$OLNM_PY" && olnm_reload; }
+olnm_update() { [ -n "${OLNM_URL:-}" ] || { printf '%s\n' 'File install: set OLNM_URL to the reviewed raw olnm.py URL, then olnm_update.' 'uv tool install: use uv tool upgrade one-launch-numerous-modules; then eval "$(command olnm init)".' >&2; return 1; }; curl -fsSL "$OLNM_URL" -o "$OLNM_PY.new" && python3 "$OLNM_PY.new" --help >/dev/null && mv "$OLNM_PY.new" "$OLNM_PY" && olnm_reload; }
 _olnm_d() { cat "$DIAL_FILE" 2>/dev/null || echo 3; }
 _olnm_hub() { [ "$(_olnm_d)" -le 2 ] && [ -f "$OLNM_HOME/forge/state.json" ]; }
 _olnm_cnf() { python3 "$OLNM_PY" like "$1" --hint >&2; return 127; }
@@ -1205,10 +1205,10 @@ def doctor() -> dict:
             result = subprocess.run(["uv", "tool", "list"], capture_output=True, text=True, timeout=10)
             if result.returncode:
                 print("uv tool list failed; run 'uv tool list' to inspect the error.")
-            elif re.search(r"(?m)^one-linear-numerous-memo\s", result.stdout):
-                print("uv tool: one-linear-numerous-memo is installed; update with: uv tool upgrade one-linear-numerous-memo")
+            elif re.search(r"(?m)^one-launch-numerous-modules\s", result.stdout):
+                print("uv tool: one-launch-numerous-modules is installed; update with: uv tool upgrade one-launch-numerous-modules")
             else:
-                print("uv tool: one-linear-numerous-memo was not listed; install with: uv tool install 'git+https://github.com/myon-bioinformatics/OneLinearNumerousMemo.git@main'")
+                print("uv tool: one-launch-numerous-modules was not listed; install with: uv tool install 'git+https://github.com/myon-bioinformatics/OneLaunchNumerousModules.git@main'")
         except (OSError, subprocess.TimeoutExpired):
             print("Could not inspect uv tools; run 'uv tool list' manually.")
     else:
@@ -1264,7 +1264,7 @@ class _Parser(argparse.ArgumentParser):
 
 
 def build_parser() -> argparse.ArgumentParser:
-    ap = _Parser(prog="olnm", description="🧷 OneLinearNumerousMemo")
+    ap = _Parser(prog="olnm", description="🧷 OneLaunchNumerousModules")
     sp = ap.add_subparsers(dest="cmd", required=True)
     s = sp.add_parser("init", help="🐚 print shell code to eval"); s.add_argument("shell", nargs="?", choices=["bash", "zsh"])
     s = sp.add_parser("ls", help="📖 list"); s.add_argument("section", nargs="?"); s.add_argument("--offline", action="store_true")
