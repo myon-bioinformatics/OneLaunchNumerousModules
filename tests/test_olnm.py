@@ -427,14 +427,14 @@ class DoctorMigrationTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             home = Path(tmp)
             uv = home / 'uv'
-            uv.write_text('#!/bin/sh\nprintf "one-linear-numerous-memo v0.1.0\\n"\n')
+            uv.write_text('#!/bin/sh\nprintf "one-launch-numerous-modules v0.1.0\\n"\n')
             uv.chmod(0o755)
             env = dict(os.environ, HOME=tmp, PATH=tmp, OLNM_HOME=str(home / 'state'),
                        DIAL_FILE=str(home / 'dial'))
             result = subprocess.run([sys.executable, PY, 'doctor'], env=env,
                                     capture_output=True, text=True, timeout=15)
             self.assertEqual(result.returncode, 0, result.stderr)
-            self.assertIn('uv tool upgrade one-linear-numerous-memo', result.stdout)
+            self.assertIn('uv tool upgrade one-launch-numerous-modules', result.stdout)
             self.assertNotIn('uv tool install --force', result.stdout)
 
     def test_detects_old_settings_without_disclosure_or_changes(self):
