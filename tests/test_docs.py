@@ -17,6 +17,21 @@ import unittest
 from urllib.parse import urljoin, urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+from vendor.cli_args import Command, run_cli, run_command
+
+
+def _utf8_child_env(env):
+    """Copy env and pin PYTHONIOENCODING=utf-8, replacing any other spelling of that key.
+
+    run_cli decodes stdout and stderr as UTF-8. A bare self.env keeps the parent's locale.
+    """
+    child = dict(env)
+    for key in list(child):
+        if key.upper() == "PYTHONIOENCODING":
+            del child[key]
+    child["PYTHONIOENCODING"] = "utf-8"
+    return child
 
 
 # ─── 📖 README examples · uv lifecycle ───
@@ -46,8 +61,10 @@ class IsolatedInvocation(unittest.TestCase):
         self.assertEqual(result.returncode, expected, result.stdout + result.stderr)
         return result
 
-    def cli(self, *args, **kwargs):
-        return self.execute(sys.executable, SOURCE, *args, **kwargs)
+    def cli(self, *args, cwd=None, input=None, expected=0):
+        result = run_cli(SOURCE, *args, cwd=cwd or self.work, env=_utf8_child_env(self.env), stdin=input, timeout=60)
+        self.assertEqual(result.returncode, expected, result.stdout + result.stderr)
+        return result
 
 
 class TestReadmeInvocation(IsolatedInvocation):
@@ -73,20 +90,20 @@ class TestReadmeInvocation(IsolatedInvocation):
 
     def test_call_json_separates_progress_and_supports_kwargs(self):
         result = self.cli("call", "like", '["uvtets"]', "--kwargs", '{"n":2}')
-        self.assertEqual(json.loads(result.stdout)[0], "uvtest")
-        self.assertLessEqual(len(json.loads(result.stdout)), 2)
+        self.assertEqual(result.json()[0], "uvtest")
+        self.assertLessEqual(len(result.json()), 2)
         self.assertIn("uvtest", result.stderr)
         result = self.cli("call", "ls", '["python"]', "--kwargs", '{"offline":true}')
-        rows = json.loads(result.stdout)
+        rows = result.json()
         self.assertTrue(rows)
         self.assertTrue(all(row["section"] == "python" and not row["net"] for row in rows))
 
     def test_run_inherits_stdin_cwd_and_preserves_space_arguments(self):
         result = self.cli("run", "jsonf", input='{"answer":42}')
-        self.assertEqual(json.loads(result.stdout), {"answer": 42})
+        self.assertEqual(result.json(), {"answer": 42})
         (self.work / "file with spaces.json").write_text('{"answer":42}')
         result = self.cli("run", "jsonf", "file with spaces.json")
-        self.assertEqual(json.loads(result.stdout), {"answer": 42})
+        self.assertEqual(result.json(), {"answer": 42})
         result = self.cli("calc", "6 mul 7")
         self.assertEqual(result.stdout.strip(), "42")
 
@@ -94,12 +111,15 @@ class TestReadmeInvocation(IsolatedInvocation):
         source = self.work / ".olnm.py"
         shutil.copyfile(SOURCE, source)
         self.env["OLNM_PY"] = str(source)
-        result = self.execute(sys.executable, source, "calc", "6*7")
+        result = run_cli(source, "calc", "6*7", cwd=self.work, env=_utf8_child_env(self.env), timeout=60)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(result.stdout.strip(), "42")
-        result = self.execute(
-            sys.executable, "-c",
-            'import os, runpy; m = runpy.run_path(os.environ["OLNM_PY"]); m["like"]("uvtets")',
+        result = run_command(
+            Command((sys.executable, "-c",
+                     'import os, runpy; m = runpy.run_path(os.environ["OLNM_PY"]); m["like"]("uvtets")')),
+            cwd=self.work, env=self.env, timeout=60,
         )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(result.stdout.splitlines()[0], "uvtest")
 
     def test_run_exit_codes_and_offline_stubs(self):
@@ -111,7 +131,7 @@ class TestReadmeInvocation(IsolatedInvocation):
         result = self.cli("run", "myip", expected=1)
         self.assertIn("needs dial", result.stderr)
         self.assertEqual(self.cli("calc", "6*7").stdout.strip(), "42")
-        self.assertEqual(json.loads(self.cli("call", "read_dial").stdout), 0)
+        self.assertEqual(self.cli("call", "read_dial").json(), 0)
 
     def test_all_cli_help_paths(self):
         # test_olnm configures module constants on import during full discovery.

@@ -7,12 +7,20 @@ ROOT = Path(__file__).resolve().parents[1]
 _spec = importlib.util.spec_from_file_location("olnm_fleet_check", ROOT / "vendor/fleet_check.py")
 fleet = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(fleet)
-ACCEPTED = {"vendor/fleet_check.py": "bc57f08a590ee1cb33a8bb37c1bb3b8f28a2f3c9"}
+ACCEPTED = {
+    "vendor/fleet_check.py": "bc57f08a590ee1cb33a8bb37c1bb3b8f28a2f3c9",
+    "vendor/cli_args.py": "5ae22b1a1b808eca93e3c385a8db867fbeb8ee32",
+    "vendor/cli_args-LICENSE": "d849c17f5e7c18037e2ab2c04bc71eee3e22cd35",
+}
 
 
 class VendorLock(unittest.TestCase):
     def test_fleet_check_is_the_accepted_parent_commit(self):
-        fleet.check_lock(ROOT, commits=ACCEPTED, sources={"vendor/fleet_check.py": (fleet.PARENT, "fleet_check.py")})
+        fleet.check_lock(ROOT, commits=ACCEPTED, sources={
+            "vendor/fleet_check.py": (fleet.PARENT, "fleet_check.py"),
+            "vendor/cli_args.py": ("myon-bioinformatics/cli_args", "cli_args.py"),
+            "vendor/cli_args-LICENSE": ("myon-bioinformatics/cli_args", "LICENSE"),
+        })
 
 
 # 🧰 Scripts: 📝 each one describes itself and ⌨️ one that reads sys.argv declares its arguments (argparse /

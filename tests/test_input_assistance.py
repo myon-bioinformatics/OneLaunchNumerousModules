@@ -17,6 +17,21 @@ from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+import vendor.fleet_check as fleet_check
+from vendor.cli_args import Command, run_cli, run_command, run_node
+
+
+def _utf8_child_env(env):
+    """Copy env and pin PYTHONIOENCODING=utf-8, replacing any other spelling of that key.
+
+    run_cli decodes stdout and stderr as UTF-8. A bare self.env keeps the parent's locale.
+    """
+    child = dict(env)
+    for key in list(child):
+        if key.upper() == "PYTHONIOENCODING":
+            del child[key]
+    child["PYTHONIOENCODING"] = "utf-8"
+    return child
 
 
 # ─── ⌨️ completion · typo hints · PTY · missing runtimes ───
@@ -35,8 +50,7 @@ class TestInputAssistance(unittest.TestCase):
         self.source = ROOT / "olnm.py"
 
     def cli(self, *args, input=None):
-        return subprocess.run([sys.executable, str(self.source), *args], input=input,
-                              text=True, capture_output=True, env=self.env, cwd=self.work, timeout=15)
+        return run_cli(self.source, *args, stdin=input, env=_utf8_child_env(self.env), cwd=self.work, timeout=15)
 
     def shell(self, script, shell="bash", env=None):
         env = dict(env or self.env, OLNM_PY=str(self.source))
@@ -273,8 +287,7 @@ class TestInputAssistance(unittest.TestCase):
     def test_init_and_run_handle_shell_metacharacters_in_source_path(self):
         folder = self.work / 'literal $(touch INJECTED) " quote'; folder.mkdir()
         source = folder / 'olnm.py'; shutil.copyfile(self.source, source)
-        result = subprocess.run([sys.executable, source, 'run', 'calc', '6*7'],
-                                cwd=self.work, env=self.env, text=True, capture_output=True, timeout=15)
+        result = run_cli(source, 'run', 'calc', '6*7', cwd=self.work, env=_utf8_child_env(self.env), timeout=15)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout.strip(), '42')
         self.assertFalse((self.work / 'INJECTED').exists())
@@ -302,15 +315,15 @@ class TestCalculator(unittest.TestCase):
         for name in ('alpha', 'two words', '2**10'):
             (self.work / name).touch()
 
-    def execute(self, argv):
-        return subprocess.run(argv, cwd=self.work, env=self.env, text=True,
-                              capture_output=True, timeout=30)
+    def cli(self, *args):
+        return run_cli(SOURCE, *args, cwd=self.work, env=_utf8_child_env(self.env), timeout=30)
 
     def shell(self, shell, command):
         if not shutil.which(shell):
             self.skipTest(f'{shell} unavailable')
-        return self.execute([shell, '-f' if shell == 'zsh' else '--noprofile', '-c',
-                             f'eval "$(python3 "$OLNM_PY" init {shell})"\n{command}'])
+        return subprocess.run([shell, '-f' if shell == 'zsh' else '--noprofile', '-c',
+                               f'eval "$(python3 "$OLNM_PY" init {shell})"\n{command}'],
+                              cwd=self.work, env=self.env, text=True, capture_output=True, timeout=30)
 
     def check(self, result, output, code=0):
         self.assertEqual(result.returncode, code, result.stderr)
@@ -359,16 +372,18 @@ class TestCalculator(unittest.TestCase):
     def test_python_results_and_exit_codes(self):
         for expression in ('6*7', '6 + 7', '2**10', '-6*7', '1/0', '1 +'):
             with self.subTest(expression=expression):
-                old = self.execute([sys.executable, '-c', f'from math import *; print({expression})'])
-                new = self.execute([sys.executable, str(SOURCE), 'calc', expression])
+                old = run_command(Command((sys.executable, '-c', f'from math import *; print({expression})')),
+                                  cwd=self.work, env=self.env, timeout=30)
+                new = self.cli('calc', expression)
                 self.assertEqual((new.returncode, new.stdout), (old.returncode, old.stdout))
 
-    @unittest.skipUnless(shutil.which('node'), 'requires node')
+    @unittest.skipUnless(fleet_check.node(), 'Node 26+ unavailable')
     def test_node_results_and_exit_codes(self):
         for expression in ('6*7', '6 + 7', '2**10', '1/0', '1 +', '-6*7'):
             with self.subTest(expression=expression):
-                old = self.execute(['node', '-p', '(' + expression + ')'])
-                new = self.execute([sys.executable, str(SOURCE), 'calc', '--engine', 'node', expression])
+                old = run_node('-p', '(' + expression + ')', node=fleet_check.node(),
+                               cwd=self.work, env=self.env, timeout=30)
+                new = self.cli('calc', '--engine', 'node', expression)
                 self.assertEqual((new.returncode, new.stdout), (old.returncode, old.stdout))
 
     def test_numeric_mode_rejects_code_and_non_arithmetic(self):
@@ -378,7 +393,7 @@ class TestCalculator(unittest.TestCase):
                                '"hello"', '[1]', '(1,2)', '1j', '2 ^ 3',
                                '2 << 3', '1 if 1 else 2', '1+' * 3000):
                 with self.subTest(engine=engine, expression=expression):
-                    result = self.execute([sys.executable, str(SOURCE), 'calc', '--engine', engine, expression])
+                    result = self.cli('calc', '--engine', engine, expression)
                     self.check(result, '', 1)
                     self.assertTrue(result.stderr.startswith('calc:'))
         self.assertFalse((self.work / 'owned').exists())
@@ -401,25 +416,27 @@ class TestCalculator(unittest.TestCase):
         self.check(self.shell('bash', 'calc --engine node lpar -2 rpar pow 2'), '4')
 
     def test_python_one_liner_without_formula_quotes(self):
-        self.check(self.execute([sys.executable, '-c',
+        self.check(run_command(Command((
+            sys.executable, '-c',
             'import olnm,sys; sys.exit(olnm.calculate(*sys.argv[1:]))',
-            '6', 'mul', '7']), '42')
+            '6', 'mul', '7')), cwd=self.work, env=self.env, timeout=30), '42')
 
     def test_run_arguments_are_not_globbed_again(self):
-        self.check(self.execute([sys.executable, str(SOURCE), 'run', 'calc', '6', '*', '7']), '42')
+        self.check(self.cli('run', 'calc', '6', '*', '7'), '42')
 
-    @unittest.skipUnless(shutil.which('node'), 'requires node')
+    @unittest.skipUnless(fleet_check.node(), 'Node 26+ unavailable')
     def test_node_caller_uses_argument_array(self):
-        self.check(self.execute(['node', '-e',
+        self.check(run_node(
+            '-e',
             'const {execFileSync}=require("node:child_process"); process.stdout.write(execFileSync(process.argv[1],[process.env.OLNM_PY,"calc","6","*","7"],{encoding:"utf8"}))',
-            sys.executable]), '42')
+            sys.executable, node=fleet_check.node(), cwd=self.work, env=self.env, timeout=30), '42')
 
     def test_engine_options_help_and_missing_node(self):
-        self.check(self.execute([sys.executable, str(SOURCE), 'calc', '--engine=python', '-6*7']), '-42')
-        self.check(self.execute([sys.executable, str(SOURCE), 'calc', '--', '-6*7']), '-42')
-        self.assertEqual(self.execute([sys.executable, str(SOURCE), 'calc', '--engine']).returncode, 2)
-        self.assertEqual(self.execute([sys.executable, str(SOURCE), 'calc', '--engine', 'bad', '1']).returncode, 2)
-        self.assertIn('usage:', self.execute([sys.executable, str(SOURCE), 'calc', '--help']).stdout)
+        self.check(self.cli('calc', '--engine=python', '-6*7'), '-42')
+        self.check(self.cli('calc', '--', '-6*7'), '-42')
+        self.assertEqual(self.cli('calc', '--engine').returncode, 2)
+        self.assertEqual(self.cli('calc', '--engine', 'bad', '1').returncode, 2)
+        self.assertIn('usage:', self.cli('calc', '--help').stdout)
         import olnm
         from unittest import mock
         with mock.patch.object(olnm.subprocess, 'run', side_effect=FileNotFoundError):
@@ -427,7 +444,7 @@ class TestCalculator(unittest.TestCase):
         self.assertEqual(olnm.calculate('1', engine='bad'), 1)
 
     def test_words_backend_needs_no_bash(self):
-        self.check(self.execute([sys.executable, str(SOURCE), 'calc', '-6', 'mul', '7']), '-42')
+        self.check(self.cli('calc', '-6', 'mul', '7'), '-42')
 
 
 if __name__ == "__main__":
