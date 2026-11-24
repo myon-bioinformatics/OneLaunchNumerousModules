@@ -21,6 +21,19 @@ sys.path.insert(0, str(ROOT))
 from vendor.cli_args import Command, run_cli, run_command
 
 
+def _utf8_child_env(env):
+    """Copy env and pin PYTHONIOENCODING=utf-8, replacing any other spelling of that key.
+
+    run_cli decodes stdout and stderr as UTF-8. A bare self.env keeps the parent's locale.
+    """
+    child = dict(env)
+    for key in list(child):
+        if key.upper() == "PYTHONIOENCODING":
+            del child[key]
+    child["PYTHONIOENCODING"] = "utf-8"
+    return child
+
+
 # ─── 📖 README examples · uv lifecycle ───
 
 SOURCE = ROOT / "olnm.py"
@@ -49,7 +62,7 @@ class IsolatedInvocation(unittest.TestCase):
         return result
 
     def cli(self, *args, cwd=None, input=None, expected=0):
-        result = run_cli(SOURCE, *args, cwd=cwd or self.work, env=self.env, stdin=input, timeout=60)
+        result = run_cli(SOURCE, *args, cwd=cwd or self.work, env=_utf8_child_env(self.env), stdin=input, timeout=60)
         self.assertEqual(result.returncode, expected, result.stdout + result.stderr)
         return result
 
@@ -98,7 +111,7 @@ class TestReadmeInvocation(IsolatedInvocation):
         source = self.work / ".olnm.py"
         shutil.copyfile(SOURCE, source)
         self.env["OLNM_PY"] = str(source)
-        result = run_cli(source, "calc", "6*7", cwd=self.work, env=self.env, timeout=60)
+        result = run_cli(source, "calc", "6*7", cwd=self.work, env=_utf8_child_env(self.env), timeout=60)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(result.stdout.strip(), "42")
         result = run_command(

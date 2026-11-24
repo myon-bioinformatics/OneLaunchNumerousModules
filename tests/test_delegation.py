@@ -26,6 +26,19 @@ import vendor.fleet_check as fleet_check
 from vendor.cli_args import Command, run_cli, run_command, run_node
 
 
+def _utf8_child_env(env):
+    """Copy env and pin PYTHONIOENCODING=utf-8, replacing any other spelling of that key.
+
+    run_cli decodes stdout and stderr as UTF-8. A bare self.env keeps the parent's locale.
+    """
+    child = dict(env)
+    for key in list(child):
+        if key.upper() == "PYTHONIOENCODING":
+            del child[key]
+    child["PYTHONIOENCODING"] = "utf-8"
+    return child
+
+
 # ─── 🏠 NagoyAction: hub · actionlint · dial with a forge ───
 
 FAKE_NAGOYACTION = "#!{py}\nimport json,sys\nfrom pathlib import Path\nPath({log!r}).write_text(json.dumps(sys.argv[1:]))\nsys.exit(7)\n"
@@ -48,10 +61,7 @@ class ForgeDelegationTest(unittest.TestCase):
         self.env.pop("NAGOYACTION", None)
 
     def olnm(self, *args, **env):
-        # run_cli decodes UTF-8 and does not follow the locale the way text=True did.
-        child = dict(self.env, **env)
-        child["PYTHONIOENCODING"] = "utf-8"
-        return run_cli(ROOT / "olnm.py", *args, env=child)
+        return run_cli(ROOT / "olnm.py", *args, env=_utf8_child_env(dict(self.env, **env)))
 
     def forwarded(self):
         return json.loads(self.log.read_text())
@@ -172,7 +182,7 @@ sys.exit(int(os.environ.get("FAKE_MISE_EXIT", "0")))
                         GIT_CONFIG_GLOBAL=str(self.work/'gitconfig'))
 
     def cli(self, *args, input='payload\n', env=None):
-        return run_cli(ROOT / 'olnm.py', *args, cwd=self.work, stdin=input, env=env or self.env, timeout=15)
+        return run_cli(ROOT / 'olnm.py', *args, cwd=self.work, stdin=input, env=_utf8_child_env(env or self.env), timeout=15)
 
     def test_direct_cli_preserves_argv_streams_cwd_and_exit(self):
         args = ('exec', 'node@26', '--', 'node', '-e', 'console.log("hello world")', '日本語', '$(touch INJECTED)', "a'b")
@@ -278,7 +288,7 @@ class StdlibCommands(unittest.TestCase):
         self.env=dict(os.environ,PATH=str(self.bin)+os.pathsep+os.environ['PATH'],PYTHONPATH=str(ROOT),OLNM_PY=str(ROOT/'olnm.py'),DIAL_FILE=str(self.work/'dial'),OLNM_HOME=str(self.work/'state'))
 
     def cli(self,*args,env=None):
-        return run_cli(ROOT/'olnm.py',*args,cwd=self.work,env=env or self.env,stdin='stdin text',timeout=15)
+        return run_cli(ROOT/'olnm.py',*args,cwd=self.work,env=_utf8_child_env(env or self.env),stdin='stdin text',timeout=15)
 
     def test_default_cli_commands_preserve_process_contract(self):
         for name,tool in olnm._STDLIB_TOOLS.items():
@@ -362,7 +372,7 @@ class TestBundledYourself(unittest.TestCase):
         self.env.pop('PYTHONPATH',None)
 
     def cli(self,*args):
-        return run_cli(self.source,*args,cwd=self.work,env=self.env,timeout=20)
+        return run_cli(self.source,*args,cwd=self.work,env=_utf8_child_env(self.env),timeout=20)
 
     def test_snapshot_integrity_license_and_inert_import(self):
         self.assertEqual(hashlib.sha256(olnm._YOURSELF_SOURCE.encode()).hexdigest(),olnm._YOURSELF_SHA256)
@@ -380,7 +390,7 @@ class TestBundledYourself(unittest.TestCase):
         result=self.cli('yourself','--minimal','--format','json')
         self.assertEqual(result.returncode,0,result.stderr)
         upstream=self.work/'reference.py';upstream.write_text(olnm._YOURSELF_SOURCE)
-        expected=run_cli(upstream,'--minimal','--format','json',cwd=self.work,env=self.env,timeout=20)
+        expected=run_cli(upstream,'--minimal','--format','json',cwd=self.work,env=_utf8_child_env(self.env),timeout=20)
         self.assertEqual(result.json(), expected.json())
         self.assertEqual(result.json()['schema_version'],1)
         self.assertFalse((self.work/'state').exists())
@@ -446,13 +456,13 @@ class TestBundledYourself(unittest.TestCase):
         git('init','-q');git('add','yourself.py','LICENSE')
         git('-c','user.name=test','-c','user.email=test@example.invalid','commit','-qm','snapshot')
         target=self.work/'target.py';target.write_text('if __name__ == "__main__":\n    pass\n')
-        result=run_cli(ROOT/'scripts/update_yourself.py',upstream,'--target',target,env=self.env,timeout=15)
+        result=run_cli(ROOT/'scripts/update_yourself.py',upstream,'--target',target,env=_utf8_child_env(self.env),timeout=15)
         self.assertEqual(result.returncode,0,result.stderr)
         expected=target.read_bytes()
-        self.assertEqual(run_cli(ROOT/'scripts/update_yourself.py',upstream,'--target',target,env=self.env).returncode,0)
+        self.assertEqual(run_cli(ROOT/'scripts/update_yourself.py',upstream,'--target',target,env=_utf8_child_env(self.env)).returncode,0)
         self.assertEqual(target.read_bytes(),expected)
         (upstream/'yourself.py').write_text('def main(argv=None):\n    return 1\n')
-        result=run_cli(ROOT/'scripts/update_yourself.py',upstream,'--target',target,env=self.env,timeout=15)
+        result=run_cli(ROOT/'scripts/update_yourself.py',upstream,'--target',target,env=_utf8_child_env(self.env),timeout=15)
         self.assertNotEqual(result.returncode,0)
         self.assertIn('differs from the pinned',result.stderr)
         self.assertEqual(target.read_bytes(),expected)

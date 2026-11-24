@@ -21,6 +21,19 @@ import vendor.fleet_check as fleet_check
 from vendor.cli_args import Command, run_cli, run_command, run_node
 
 
+def _utf8_child_env(env):
+    """Copy env and pin PYTHONIOENCODING=utf-8, replacing any other spelling of that key.
+
+    run_cli decodes stdout and stderr as UTF-8. A bare self.env keeps the parent's locale.
+    """
+    child = dict(env)
+    for key in list(child):
+        if key.upper() == "PYTHONIOENCODING":
+            del child[key]
+    child["PYTHONIOENCODING"] = "utf-8"
+    return child
+
+
 # ─── ⌨️ completion · typo hints · PTY · missing runtimes ───
 
 class TestInputAssistance(unittest.TestCase):
@@ -37,7 +50,7 @@ class TestInputAssistance(unittest.TestCase):
         self.source = ROOT / "olnm.py"
 
     def cli(self, *args, input=None):
-        return run_cli(self.source, *args, stdin=input, env=self.env, cwd=self.work, timeout=15)
+        return run_cli(self.source, *args, stdin=input, env=_utf8_child_env(self.env), cwd=self.work, timeout=15)
 
     def shell(self, script, shell="bash", env=None):
         env = dict(env or self.env, OLNM_PY=str(self.source))
@@ -274,7 +287,7 @@ class TestInputAssistance(unittest.TestCase):
     def test_init_and_run_handle_shell_metacharacters_in_source_path(self):
         folder = self.work / 'literal $(touch INJECTED) " quote'; folder.mkdir()
         source = folder / 'olnm.py'; shutil.copyfile(self.source, source)
-        result = run_cli(source, 'run', 'calc', '6*7', cwd=self.work, env=self.env, timeout=15)
+        result = run_cli(source, 'run', 'calc', '6*7', cwd=self.work, env=_utf8_child_env(self.env), timeout=15)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout.strip(), '42')
         self.assertFalse((self.work / 'INJECTED').exists())
@@ -303,7 +316,7 @@ class TestCalculator(unittest.TestCase):
             (self.work / name).touch()
 
     def cli(self, *args):
-        return run_cli(SOURCE, *args, cwd=self.work, env=self.env, timeout=30)
+        return run_cli(SOURCE, *args, cwd=self.work, env=_utf8_child_env(self.env), timeout=30)
 
     def shell(self, shell, command):
         if not shutil.which(shell):

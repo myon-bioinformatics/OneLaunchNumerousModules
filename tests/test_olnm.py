@@ -11,6 +11,19 @@ import vendor.fleet_check as fleet_check
 from vendor.cli_args import run_cli, run_node
 import olnm  # noqa: E402
 
+
+def _utf8_child_env(env):
+    """Copy env and pin PYTHONIOENCODING=utf-8, replacing any other spelling of that key.
+
+    run_cli decodes stdout and stderr as UTF-8. A bare environment keeps the parent's locale.
+    """
+    child = dict(env)
+    for key in list(child):
+        if key.upper() == "PYTHONIOENCODING":
+            del child[key]
+    child["PYTHONIOENCODING"] = "utf-8"
+    return child
+
 PY = str(ROOT / "olnm.py")
 
 
@@ -116,8 +129,7 @@ class TestDial(unittest.TestCase):
         self.assertEqual(olnm.read_dial(), 2)
 
     def test_cli_dial_names_and_typo_hint(self):
-        # run_cli decodes UTF-8; pin the child so the emoji line does not follow the locale.
-        env = dict(os.environ, PYTHONIOENCODING="utf-8")
+        env = _utf8_child_env(os.environ)
         r = run_cli(PY, "dial", "offline", env=env)
         self.assertEqual(r.stdout, "🎛️  → 🔌 offline (0)  🌍 one-liners stubbed\n")
         r = run_cli(PY, "dial", "mirorr", env=env)
@@ -173,7 +185,7 @@ class TestOneNamePerJob(unittest.TestCase):
         r = bash("pyjson; echo rc=$?")
         self.assertIn("pyjson was merged → use: jsonf", r.stderr)
         self.assertIn("rc=127", r.stdout)
-        r = run_cli(PY, "run", "dpsa", env=dict(os.environ, PYTHONIOENCODING="utf-8"))
+        r = run_cli(PY, "run", "dpsa", env=_utf8_child_env(os.environ))
         self.assertEqual((r.returncode, r.stderr.strip()), (127, "🤔 dpsa was merged → use: dps -a"))
 
     def test_jsonf_output_is_the_same_with_and_without_jq(self):
@@ -246,7 +258,7 @@ class TestShow(unittest.TestCase):
         r = run_cli(PY, "show", "uvtets")
         self.assertEqual((r.returncode, r.stdout), (127, ""))
         self.assertIn("did you mean: uvtest", r.stderr)
-        called = run_cli(PY, "call", "show", '["mkcd"]').json()
+        called = run_cli(PY, "call", "show", '["mkcd"]', env=_utf8_child_env(os.environ)).json()
         self.assertTrue(called.startswith("# 📁 mkcd: "))
 
     def test_every_name_can_be_shown_and_completed(self):
