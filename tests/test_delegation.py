@@ -22,6 +22,8 @@ from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+import vendor.fleet_check as fleet_check
+from vendor.cli_args import Command, run_cli, run_command, run_node
 
 
 # ─── 🏠 NagoyAction: hub · actionlint · dial with a forge ───
@@ -46,8 +48,10 @@ class ForgeDelegationTest(unittest.TestCase):
         self.env.pop("NAGOYACTION", None)
 
     def olnm(self, *args, **env):
-        return subprocess.run([sys.executable, str(ROOT / "olnm.py"), *args], env=dict(self.env, **env),
-                              text=True, capture_output=True)
+        # run_cli decodes UTF-8 and does not follow the locale the way text=True did.
+        child = dict(self.env, **env)
+        child["PYTHONIOENCODING"] = "utf-8"
+        return run_cli(ROOT / "olnm.py", *args, env=child)
 
     def forwarded(self):
         return json.loads(self.log.read_text())
@@ -168,26 +172,25 @@ sys.exit(int(os.environ.get("FAKE_MISE_EXIT", "0")))
                         GIT_CONFIG_GLOBAL=str(self.work/'gitconfig'))
 
     def cli(self, *args, input='payload\n', env=None):
-        return subprocess.run([sys.executable, ROOT/'olnm.py', *args], cwd=self.work,
-                              input=input, text=True, capture_output=True, env=env or self.env, timeout=15)
+        return run_cli(ROOT / 'olnm.py', *args, cwd=self.work, stdin=input, env=env or self.env, timeout=15)
 
     def test_direct_cli_preserves_argv_streams_cwd_and_exit(self):
         args = ('exec', 'node@26', '--', 'node', '-e', 'console.log("hello world")', '日本語', '$(touch INJECTED)', "a'b")
         result = self.cli('mise', *args, env=dict(self.env, FAKE_MISE_EXIT='7', FAKE_MISE_STDERR='1'))
         self.assertEqual(result.returncode, 7)
-        observed = json.loads(result.stdout)
+        observed = result.json()
         self.assertEqual(observed['argv'], list(args))
         self.assertEqual(observed['cwd'], str(self.work))
         self.assertEqual(observed['stdin'], 'payload\n')
         self.assertIn('mise diagnostic', result.stderr)
         self.assertFalse((self.work/'INJECTED').exists())
-        self.assertEqual(json.loads(self.cli('mise', '--', '--version').stdout)['argv'], ['--version'])
+        self.assertEqual(self.cli('mise', '--', '--version').json()['argv'], ['--version'])
 
     def test_python_api_works_without_bash(self):
         # No bash or other runtime is on PATH; both Python executable paths are absolute.
-        proc = subprocess.run([sys.executable, '-c',
-            'import olnm,sys;sys.exit(olnm.mise("exec","--","uv","run","python","-V"))'],
-            cwd=self.work, env=dict(self.env, PATH=str(self.bin)), input='', text=True, capture_output=True, timeout=15)
+        proc = run_command(Command((sys.executable, '-c',
+            'import olnm,sys;sys.exit(olnm.mise("exec","--","uv","run","python","-V"))')),
+            cwd=self.work, env=dict(self.env, PATH=str(self.bin)), stdin='', timeout=15)
         self.assertEqual(proc.returncode, 0, proc.stderr)
         self.assertEqual(json.loads(proc.stdout)['argv'], ['exec','--','uv','run','python','-V'])
 
@@ -199,7 +202,7 @@ sys.exit(int(os.environ.get("FAKE_MISE_EXIT", "0")))
             with self.subTest(name=name):
                 result = self.cli('run', name, 'node@26', '--', 'node', 'arg with spaces')
                 self.assertEqual(result.returncode, 0, result.stderr)
-                observed = json.loads(result.stdout)
+                observed = result.json()
                 self.assertEqual(observed['argv'], prefix+['node@26','--','node','arg with spaces'])
                 if name == 'miseoffline':
                     self.assertEqual((observed['auto'], observed['exec_auto']), ('false','false'))
@@ -231,7 +234,7 @@ sys.exit(int(os.environ.get("FAKE_MISE_EXIT", "0")))
         self.assertIn('needs dial', result.stderr)
         local = self.cli('run','miseoffline','--','node','-v')
         self.assertEqual(local.returncode, 0, local.stderr)
-        self.assertEqual(json.loads(local.stdout)['auto'], 'false')
+        self.assertEqual(local.json()['auto'], 'false')
         for name in ['misels','misedoctor']:
             self.assertEqual(self.cli('run',name).returncode, 0)
 
@@ -251,12 +254,12 @@ sys.exit(int(os.environ.get("FAKE_MISE_EXIT", "0")))
             self.assertEqual(result.returncode,0,result.stderr)
             self.assertEqual(json.loads(result.stdout)['argv'],['exec','node@26','--','node','--version'])
 
-    @unittest.skipUnless(shutil.which('node'), 'Node unavailable')
+    @unittest.skipUnless(fleet_check.node(), 'Node 26+ unavailable')
     def test_node_execfile_invokes_python_adapter(self):
         js = next(block for block in re.findall(r'```js\n(.*?)\n```', (ROOT/'README.md').read_text(), re.S)
                   if block.startswith("const { spawnSync }"))
-        result = subprocess.run(['node','-e',js],cwd=self.work,
-                                env=self.env,input='node stdin',text=True,capture_output=True,timeout=15)
+        result = run_node('-e', js, node=fleet_check.node(), cwd=self.work,
+                          env=self.env, stdin='node stdin', timeout=15)
         self.assertEqual(result.returncode,0,result.stderr)
         observed=json.loads(result.stdout)
         self.assertEqual(observed['argv'],['exec','node@26','--','node','--version'])
@@ -275,13 +278,13 @@ class StdlibCommands(unittest.TestCase):
         self.env=dict(os.environ,PATH=str(self.bin)+os.pathsep+os.environ['PATH'],PYTHONPATH=str(ROOT),OLNM_PY=str(ROOT/'olnm.py'),DIAL_FILE=str(self.work/'dial'),OLNM_HOME=str(self.work/'state'))
 
     def cli(self,*args,env=None):
-        return subprocess.run([sys.executable,ROOT/'olnm.py',*args],cwd=self.work,env=env or self.env,input='stdin text',text=True,capture_output=True,timeout=15)
+        return run_cli(ROOT/'olnm.py',*args,cwd=self.work,env=env or self.env,stdin='stdin text',timeout=15)
 
     def test_default_cli_commands_preserve_process_contract(self):
         for name,tool in olnm._STDLIB_TOOLS.items():
             r=self.cli(name,'--help','arg with spaces','$(touch INJECTED)',env=dict(self.env,BACKEND_EXIT='7'))
             self.assertEqual(r.returncode,7,r.stderr)
-            d=json.loads(r.stdout);self.assertEqual(d['stdin'],'stdin text');self.assertEqual(d['cwd'],str(self.work))
+            d=r.json();self.assertEqual(d['stdin'],'stdin text');self.assertEqual(d['cwd'],str(self.work))
             self.assertEqual(d['argv'][:3],['tool','run','--from'])
             self.assertTrue(d['argv'][3].endswith('@'+tool['commit']))
             self.assertEqual(d['argv'][4:],[tool['command'],'--help','arg with spaces','$(touch INJECTED)'])
@@ -289,7 +292,7 @@ class StdlibCommands(unittest.TestCase):
 
     def test_default_python_api(self):
         for name,tool in olnm._STDLIB_TOOLS.items():
-            r=subprocess.run([sys.executable,'-c',f'import olnm,sys;sys.exit(olnm.{name}("--help"))'],cwd=self.work,env=self.env,input='',text=True,capture_output=True,timeout=15)
+            r=run_command(Command((sys.executable,'-c',f'import olnm,sys;sys.exit(olnm.{name}("--help"))')),cwd=self.work,env=self.env,stdin='',timeout=15)
             self.assertEqual(r.returncode,0,r.stderr);self.assertEqual(json.loads(r.stdout)['argv'][-2:],[tool['command'],'--help'])
 
     def test_bash_zsh_and_run_entrypoints(self):
@@ -303,7 +306,7 @@ class StdlibCommands(unittest.TestCase):
         pin=f"git+https://github.com/myon-bioinformatics/OnTautoLogy.git@{olnm._STDLIB_TOOLS['ontautology']['commit']}"
         for args,source in ((['--help'],pin),(['exchange','--help'],'ontautology[exchange] @ '+pin)):
             r=self.cli('ontautology',*args)
-            self.assertEqual(r.returncode,0,r.stderr);self.assertEqual(json.loads(r.stdout)['argv'][3:5],[source,'ontautology'])
+            self.assertEqual(r.returncode,0,r.stderr);self.assertEqual(r.json()['argv'][3:5],[source,'ontautology'])
 
     def test_onto_uses_distribution_extra_and_propagates_offline(self):
         self.uv.write_text(self.uv.read_text().replace(
@@ -320,7 +323,7 @@ class StdlibCommands(unittest.TestCase):
                 (self.work / "dial").write_text(dial)
                 result = self.cli("onto", *args)
                 self.assertEqual(result.returncode, 0, result.stderr)
-                observed = json.loads(result.stdout)
+                observed = result.json()
                 offline = dial in {"0", "1"}
                 expected = ["--offline"] if offline else []
                 self.assertEqual(observed["argv"], [*expected, "tool", "run", "--from", source, "onto", *args])
@@ -328,7 +331,7 @@ class StdlibCommands(unittest.TestCase):
 
     def test_dial_zero_uses_uv_offline_cache_mode(self):
         (self.work/'dial').write_text('0\n');r=self.cli('xprobe','--help')
-        self.assertEqual(r.returncode,0,r.stderr);self.assertEqual(json.loads(r.stdout)['argv'][0],'--offline')
+        self.assertEqual(r.returncode,0,r.stderr);self.assertEqual(r.json()['argv'][0],'--offline')
 
     def test_missing_uv_gives_next_step_and_no_registration(self):
         self.uv.unlink();env=dict(self.env,PATH=str(self.bin));r=self.cli('xprobe','--help',env=env)
@@ -359,8 +362,7 @@ class TestBundledYourself(unittest.TestCase):
         self.env.pop('PYTHONPATH',None)
 
     def cli(self,*args):
-        return subprocess.run([sys.executable,self.source,*args],cwd=self.work,env=self.env,
-                              text=True,capture_output=True,timeout=20)
+        return run_cli(self.source,*args,cwd=self.work,env=self.env,timeout=20)
 
     def test_snapshot_integrity_license_and_inert_import(self):
         self.assertEqual(hashlib.sha256(olnm._YOURSELF_SOURCE.encode()).hexdigest(),olnm._YOURSELF_SHA256)
@@ -378,10 +380,9 @@ class TestBundledYourself(unittest.TestCase):
         result=self.cli('yourself','--minimal','--format','json')
         self.assertEqual(result.returncode,0,result.stderr)
         upstream=self.work/'reference.py';upstream.write_text(olnm._YOURSELF_SOURCE)
-        expected=subprocess.run([sys.executable,upstream,'--minimal','--format','json'],
-                                cwd=self.work,env=self.env,text=True,capture_output=True,timeout=20)
-        self.assertEqual(json.loads(result.stdout),json.loads(expected.stdout))
-        self.assertEqual(json.loads(result.stdout)['schema_version'],1)
+        expected=run_cli(upstream,'--minimal','--format','json',cwd=self.work,env=self.env,timeout=20)
+        self.assertEqual(result.json(), expected.json())
+        self.assertEqual(result.json()['schema_version'],1)
         self.assertFalse((self.work/'state').exists())
 
     def test_api_without_args_is_default_upstream_main_and_returns_exit_code(self):
@@ -409,7 +410,7 @@ class TestBundledYourself(unittest.TestCase):
                      ('yourself','--','--minimal','--format','json')]:
             result=self.cli(*args)
             self.assertEqual(result.returncode,0,result.stderr)
-            self.assertEqual(json.loads(result.stdout)['schema_version'],1)
+            self.assertEqual(result.json()['schema_version'],1)
         for shell in ['bash']+(['zsh'] if shutil.which('zsh') else []):
             result=subprocess.run([shell,'-c','eval "$(python3 "$OLNM_PY" init '+shell+')"; yourself --minimal --format json'],
                                   cwd=self.work,env=self.env,text=True,capture_output=True,timeout=20)
@@ -431,11 +432,10 @@ class TestBundledYourself(unittest.TestCase):
     def test_report_stdout_has_no_wrapper_messages_even_when_mise_is_missing(self):
         bindir=self.work/'bin';bindir.mkdir();(bindir/'python3').symlink_to(sys.executable)
         env=dict(self.env,PATH=str(bindir))
-        result=subprocess.run([sys.executable,self.source,'yourself','--minimal','--format','json'],
-                              cwd=self.work,env=env,text=True,capture_output=True,timeout=20)
+        result=run_cli(self.source,'yourself','--minimal','--format','json',cwd=self.work,env=env,timeout=20)
         self.assertEqual(result.returncode,0,result.stderr)
         self.assertEqual(result.stderr,'')
-        json.loads(result.stdout)
+        result.json()
 
     def test_snapshot_refresh_is_idempotent_and_rejects_uncommitted_source(self):
         upstream=self.work/'upstream';upstream.mkdir()
@@ -446,14 +446,13 @@ class TestBundledYourself(unittest.TestCase):
         git('init','-q');git('add','yourself.py','LICENSE')
         git('-c','user.name=test','-c','user.email=test@example.invalid','commit','-qm','snapshot')
         target=self.work/'target.py';target.write_text('if __name__ == "__main__":\n    pass\n')
-        command=[sys.executable,ROOT/'scripts/update_yourself.py',upstream,'--target',target]
-        result=subprocess.run(command,env=self.env,text=True,capture_output=True,timeout=15)
+        result=run_cli(ROOT/'scripts/update_yourself.py',upstream,'--target',target,env=self.env,timeout=15)
         self.assertEqual(result.returncode,0,result.stderr)
         expected=target.read_bytes()
-        self.assertEqual(subprocess.run(command,env=self.env,capture_output=True).returncode,0)
+        self.assertEqual(run_cli(ROOT/'scripts/update_yourself.py',upstream,'--target',target,env=self.env).returncode,0)
         self.assertEqual(target.read_bytes(),expected)
         (upstream/'yourself.py').write_text('def main(argv=None):\n    return 1\n')
-        result=subprocess.run(command,env=self.env,text=True,capture_output=True,timeout=15)
+        result=run_cli(ROOT/'scripts/update_yourself.py',upstream,'--target',target,env=self.env,timeout=15)
         self.assertNotEqual(result.returncode,0)
         self.assertIn('differs from the pinned',result.stderr)
         self.assertEqual(target.read_bytes(),expected)
