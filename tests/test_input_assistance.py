@@ -17,6 +17,7 @@ from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+from vendor.cli_args import run_cli
 
 
 # ─── ⌨️ completion · typo hints · PTY · missing runtimes ───
@@ -35,8 +36,7 @@ class TestInputAssistance(unittest.TestCase):
         self.source = ROOT / "olnm.py"
 
     def cli(self, *args, input=None):
-        return subprocess.run([sys.executable, str(self.source), *args], input=input,
-                              text=True, capture_output=True, env=self.env, cwd=self.work, timeout=15)
+        return run_cli(self.source, *args, stdin=input, env=self.env, cwd=self.work, timeout=15)
 
     def shell(self, script, shell="bash", env=None):
         env = dict(env or self.env, OLNM_PY=str(self.source))
@@ -273,8 +273,7 @@ class TestInputAssistance(unittest.TestCase):
     def test_init_and_run_handle_shell_metacharacters_in_source_path(self):
         folder = self.work / 'literal $(touch INJECTED) " quote'; folder.mkdir()
         source = folder / 'olnm.py'; shutil.copyfile(self.source, source)
-        result = subprocess.run([sys.executable, source, 'run', 'calc', '6*7'],
-                                cwd=self.work, env=self.env, text=True, capture_output=True, timeout=15)
+        result = run_cli(source, 'run', 'calc', '6*7', cwd=self.work, env=self.env, timeout=15)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout.strip(), '42')
         self.assertFalse((self.work / 'INJECTED').exists())

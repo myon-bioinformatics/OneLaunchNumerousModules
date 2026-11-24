@@ -22,6 +22,7 @@ from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+from vendor.cli_args import run_cli
 
 
 # ─── 🏠 NagoyAction: hub · actionlint · dial with a forge ───
@@ -46,8 +47,7 @@ class ForgeDelegationTest(unittest.TestCase):
         self.env.pop("NAGOYACTION", None)
 
     def olnm(self, *args, **env):
-        return subprocess.run([sys.executable, str(ROOT / "olnm.py"), *args], env=dict(self.env, **env),
-                              text=True, capture_output=True)
+        return run_cli(ROOT / 'olnm.py', *args, env=dict(self.env, **env))
 
     def forwarded(self):
         return json.loads(self.log.read_text())
@@ -168,8 +168,7 @@ sys.exit(int(os.environ.get("FAKE_MISE_EXIT", "0")))
                         GIT_CONFIG_GLOBAL=str(self.work/'gitconfig'))
 
     def cli(self, *args, input='payload\n', env=None):
-        return subprocess.run([sys.executable, ROOT/'olnm.py', *args], cwd=self.work,
-                              input=input, text=True, capture_output=True, env=env or self.env, timeout=15)
+        return run_cli(ROOT/'olnm.py', *args, cwd=self.work, stdin=input, env=env or self.env, timeout=15)
 
     def test_direct_cli_preserves_argv_streams_cwd_and_exit(self):
         args = ('exec', 'node@26', '--', 'node', '-e', 'console.log("hello world")', '日本語', '$(touch INJECTED)', "a'b")
@@ -275,7 +274,7 @@ class StdlibCommands(unittest.TestCase):
         self.env=dict(os.environ,PATH=str(self.bin)+os.pathsep+os.environ['PATH'],PYTHONPATH=str(ROOT),OLNM_PY=str(ROOT/'olnm.py'),DIAL_FILE=str(self.work/'dial'),OLNM_HOME=str(self.work/'state'))
 
     def cli(self,*args,env=None):
-        return subprocess.run([sys.executable,ROOT/'olnm.py',*args],cwd=self.work,env=env or self.env,input='stdin text',text=True,capture_output=True,timeout=15)
+        return run_cli(ROOT/'olnm.py',*args,cwd=self.work,env=env or self.env,stdin='stdin text',timeout=15)
 
     def test_default_cli_commands_preserve_process_contract(self):
         for name,tool in olnm._STDLIB_TOOLS.items():
@@ -359,8 +358,7 @@ class TestBundledYourself(unittest.TestCase):
         self.env.pop('PYTHONPATH',None)
 
     def cli(self,*args):
-        return subprocess.run([sys.executable,self.source,*args],cwd=self.work,env=self.env,
-                              text=True,capture_output=True,timeout=20)
+        return run_cli(self.source,*args,cwd=self.work,env=self.env,timeout=20)
 
     def test_snapshot_integrity_license_and_inert_import(self):
         self.assertEqual(hashlib.sha256(olnm._YOURSELF_SOURCE.encode()).hexdigest(),olnm._YOURSELF_SHA256)
@@ -431,8 +429,7 @@ class TestBundledYourself(unittest.TestCase):
     def test_report_stdout_has_no_wrapper_messages_even_when_mise_is_missing(self):
         bindir=self.work/'bin';bindir.mkdir();(bindir/'python3').symlink_to(sys.executable)
         env=dict(self.env,PATH=str(bindir))
-        result=subprocess.run([sys.executable,self.source,'yourself','--minimal','--format','json'],
-                              cwd=self.work,env=env,text=True,capture_output=True,timeout=20)
+        result=run_cli(self.source,'yourself','--minimal','--format','json',cwd=self.work,env=env,timeout=20)
         self.assertEqual(result.returncode,0,result.stderr)
         self.assertEqual(result.stderr,'')
         json.loads(result.stdout)

@@ -7,6 +7,7 @@ ROOT = Path(__file__).resolve().parent.parent
 TMP = Path(tempfile.mkdtemp(prefix="olnm-"))
 os.environ.update(OLNM_HOME=str(TMP / "home"), DIAL_FILE=str(TMP / "dial"), GIT_CONFIG_GLOBAL=str(TMP / "gitconfig"))
 sys.path.insert(0, str(ROOT))
+from vendor.cli_args import run_cli
 import olnm  # noqa: E402
 
 PY = str(ROOT / "olnm.py")
@@ -24,7 +25,9 @@ def bash(script: str, path_extra: str = "") -> subprocess.CompletedProcess:
 
 class TestStructure(unittest.TestCase):
     def test_init_is_valid_bash(self):
-        code = subprocess.run([sys.executable, PY, "init", "bash"], text=True, capture_output=True, check=True).stdout
+        init_run = run_cli(PY, "init", "bash")
+        self.assertEqual(init_run.returncode, 0, init_run.stderr)
+        code = init_run.stdout
         self.assertEqual(subprocess.run(["bash", "-n"], input=code, text=True).returncode, 0)
 
     def test_every_help_line_defines_a_function_and_names_are_unique(self):
@@ -112,9 +115,9 @@ class TestDial(unittest.TestCase):
 
     def test_cli_dial_names_and_typo_hint(self):
         env = dict(os.environ)
-        r = subprocess.run([sys.executable, PY, "dial", "offline"], text=True, capture_output=True, env=env)
+        r = run_cli(PY, "dial", "offline", env=env)
         self.assertEqual(r.stdout, "🎛️  → 🔌 offline (0)  🌍 one-liners stubbed\n")
-        r = subprocess.run([sys.executable, PY, "dial", "mirorr"], text=True, capture_output=True, env=env)
+        r = run_cli(PY, "dial", "mirorr", env=env)
         self.assertEqual(r.returncode, 2)
         self.assertIn("did you mean: mirror", r.stderr)
         self.assertEqual(olnm.DIAL_FILE.read_text(), "0\n")
@@ -167,7 +170,7 @@ class TestOneNamePerJob(unittest.TestCase):
         r = bash("pyjson; echo rc=$?")
         self.assertIn("pyjson was merged → use: jsonf", r.stderr)
         self.assertIn("rc=127", r.stdout)
-        r = subprocess.run([sys.executable, PY, "run", "dpsa"], text=True, capture_output=True)
+        r = run_cli(PY, "run", "dpsa")
         self.assertEqual((r.returncode, r.stderr.strip()), (127, "🤔 dpsa was merged → use: dps -a"))
 
     def test_jsonf_output_is_the_same_with_and_without_jq(self):
@@ -196,7 +199,9 @@ class TestOneNamePerJob(unittest.TestCase):
         self.assertEqual(converted, "2023-11-14T22:13:20+00:00")
 
     def test_shell_olnm_routes_every_cli_command_from_the_parser(self):
-        code = subprocess.run([sys.executable, PY, "init", "bash"], text=True, capture_output=True, check=True).stdout
+        init_run = run_cli(PY, "init", "bash")
+        self.assertEqual(init_run.returncode, 0, init_run.stderr)
+        code = init_run.stdout
         self.assertIn(f"_OLNM_COMMANDS='{' '.join(olnm._commands())}'", code)
         self.assertIn("gp() {", bash("olnm show gp").stdout)                     # a command added later needs no second list
         self.assertIn("gs ", bash("olnm git").stdout)                             # one word that is a section still lists it
@@ -235,10 +240,10 @@ class TestShow(unittest.TestCase):
         self.assertEqual(printed.getvalue(), text + "\n")
         self.assertTrue(text.startswith("# 🚀 gp: push current branch"))
         self.assertIn('\ngp() { git push -u origin', text)
-        r = subprocess.run([sys.executable, PY, "show", "uvtets"], text=True, capture_output=True)
+        r = run_cli(PY, "show", "uvtets")
         self.assertEqual((r.returncode, r.stdout), (127, ""))
         self.assertIn("did you mean: uvtest", r.stderr)
-        called = json.loads(subprocess.run([sys.executable, PY, "call", "show", '["mkcd"]'], text=True, capture_output=True).stdout)
+        called = run_cli(PY, "call", "show", '["mkcd"]').json()
         self.assertTrue(called.startswith("# 📁 mkcd: "))
 
     def test_every_name_can_be_shown_and_completed(self):
@@ -391,7 +396,9 @@ class TestInterop(unittest.TestCase):
                 olnm.call(name)
 
     def test_cli_call_json(self):
-        out = subprocess.run([sys.executable, PY, "call", "like", '["uvtets"]'], text=True, capture_output=True, check=True).stdout
+        call_run = run_cli(PY, "call", "like", '["uvtets"]')
+        self.assertEqual(call_run.returncode, 0, call_run.stderr)
+        out = call_run.stdout
         self.assertEqual(json.loads(out)[0], "uvtest")
 
     def test_node_and_bun_run(self):
@@ -415,7 +422,7 @@ class DoctorMigrationTest(unittest.TestCase):
             node.write_text('#!/bin/sh\nprintf "v26.0.0\\n"\n')
             node.chmod(0o755)
             env = dict(os.environ, HOME=tmp, PATH=tmp, OLNM_HOME=str(home / 'state'), DIAL_FILE=str(home / 'dial'))
-            result = subprocess.run([sys.executable, PY, 'doctor'], env=env, capture_output=True, text=True, timeout=15)
+            result = run_cli(PY, 'doctor', env=env, timeout=15)
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertIn('Python running olnm: ' + sys.version.split()[0], result.stdout)
             self.assertIn('python3 on PATH: not found', result.stdout)
@@ -431,8 +438,7 @@ class DoctorMigrationTest(unittest.TestCase):
             uv.chmod(0o755)
             env = dict(os.environ, HOME=tmp, PATH=tmp, OLNM_HOME=str(home / 'state'),
                        DIAL_FILE=str(home / 'dial'))
-            result = subprocess.run([sys.executable, PY, 'doctor'], env=env,
-                                    capture_output=True, text=True, timeout=15)
+            result = run_cli(PY, 'doctor', env=env, timeout=15)
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertIn('uv tool upgrade one-launch-numerous-modules', result.stdout)
             self.assertNotIn('uv tool install --force', result.stdout)
@@ -446,8 +452,7 @@ class DoctorMigrationTest(unittest.TestCase):
             (home / '.olnm.py').write_text('old file')
             env = dict(os.environ, HOME=tmp, OLNM_HOME=str(home / 'state'),
                        DIAL_FILE=str(home / 'dial'), OLNM_URL='another-secret')
-            result = subprocess.run([sys.executable, PY, 'doctor'], env=env,
-                                    capture_output=True, text=True, timeout=15)
+            result = run_cli(PY, 'doctor', env=env, timeout=15)
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertIn('.bashrc:2', result.stdout)
             self.assertIn('.bashrc:3', result.stdout)
