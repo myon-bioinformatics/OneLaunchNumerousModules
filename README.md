@@ -19,9 +19,9 @@ olnm は **One Launch Numerous Modules** の略称（旧称: `OneLinearNumerousM
 
 ## 概念図
 
-[![olnm の概念図：呼び出し方法・機能カテゴリ・利用シーン](assets/brand/olnm-concept.jpg)](assets/brand/olnm-concept.jpg)
+[![olnm の概念図：呼び出し方法・機能カテゴリ・利用シーン](assets/brand/repository-concept.jpg)](assets/brand/repository-concept.jpg)
 
-アイコンと favicon は提供画像 `assets/brand/olnm-overview.jpg` から切り出しています。原本の PNG / SVG はなく、JPEG からの切り出しです。画像をクリックすると拡大できます。詳細は [assets/brand/README.md](assets/brand/README.md) を参照してください。
+アイコンと favicon は提供画像 `assets/brand/repository-overview.jpg` から切り出しています。原本の PNG / SVG はなく、JPEG からの切り出しです。画像をクリックすると拡大できます。詳細は [assets/brand/README.md](assets/brand/README.md) を参照してください。
 
 
 ## 目次
