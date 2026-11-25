@@ -4,7 +4,6 @@
 - Check the Pages artifact, not paths in the full repository checkout.
 """
 import argparse
-from html.parser import HTMLParser
 import json
 import os
 from pathlib import Path
@@ -14,7 +13,6 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from urllib.parse import urljoin, urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -239,40 +237,27 @@ class TestUvLifecycle(IsolatedInvocation):
 
 # ─── 🌐 Pages artifact ───
 
-class Icons(HTMLParser):
-    def __init__(self):
-        super().__init__()
-        self.hrefs = []
+class PagesGuideTests(unittest.TestCase):
+    """📖 The front page is the PySaiyanWeBoo guide built from docs/guide.page.json (no hand-written HTML, no favicon copies)."""
 
-    def handle_starttag(self, tag, attrs):
-        attrs = dict(attrs)
-        if tag == 'link' and attrs.get('rel') == 'icon':
-            self.hrefs.append(attrs['href'])
+    def test_the_guide_is_built_from_data_at_the_root(self):
+        workflow = (ROOT / '.github/workflows/pages.yml').read_text(encoding='utf-8')
+        self.assertIn('artifact_path: _site', workflow)
+        self.assertIn('guide_page: docs/guide.page.json', workflow)
+        self.assertIn('guide_brand: OneLaunchNumerousModules', workflow)   # ♻️ icon and favicon from CaChereCyCle
+        self.assertNotIn('guide_dir', workflow)
+        self.assertEqual(sorted(p.name for p in (ROOT / 'docs').iterdir()), ['guide.page.json'])
 
-
-class PagesAssetsTests(unittest.TestCase):
-    def test_deployed_icons_resolve_to_canonical_bytes(self):
-        workflow = (ROOT / '.github/workflows/pages.yml').read_text()
-        self.assertIn('artifact_path: docs', workflow)
-        match = re.search(r'      build: \|\n((?:        [^\n]+\n)+)', workflow)   # Stage Pages brand assets (the reusable build)
-        self.assertIsNotNone(match)
-        commands = '\n'.join(line[8:] for line in match.group(1).splitlines())
-        with tempfile.TemporaryDirectory() as directory:
-            stage = Path(directory)
-            shutil.copytree(ROOT / 'docs', stage / 'docs')
-            shutil.copytree(ROOT / 'assets/brand', stage / 'assets/brand')
-            subprocess.run(['sh', '-eu', '-c', commands], cwd=stage, check=True)
-            icons = Icons()
-            icons.feed((stage / 'docs/index.html').read_text())
-            self.assertEqual(len(icons.hrefs), 2)
-            for base in ('https://example.test/', 'https://example.test/OneLaunchNumerousModules/'):
-                for href in icons.hrefs:
-                    with self.subTest(base=base, href=href):
-                        resolved = urljoin(base, href)
-                        self.assertTrue(resolved.startswith(base))
-                        relative = urlsplit(resolved).path[len(urlsplit(base).path):]
-                        deployed = stage / 'docs' / relative
-                        self.assertEqual(deployed.read_bytes(), (ROOT / 'assets/brand' / Path(relative).name).read_bytes())
+    def test_the_verification_tab_keeps_every_way_to_run_it(self):
+        spec = json.loads((ROOT / 'docs/guide.page.json').read_text(encoding='utf-8'))
+        tabs = next(b for b in spec['blocks'] if b['type'] == 'tabs')['tabs']
+        self.assertEqual(tabs[0]['label'], '🔬 検証ガイド')
+        runbook = next(b for b in tabs[0]['blocks'] if b['type'] == 'runbook')
+        self.assertEqual([b['runbook']['key'] for b in runbook['books']],
+                         ['olnm/python', 'olnm/uvfile', 'olnm/uvtool', 'olnm/uvproject', 'olnm/node', 'olnm/forge'])
+        self.assertEqual(len(runbook['env']['options']), 4)
+        ran = [s['id'] for b in runbook['books'] for s in b['runbook']['steps'] if s.get('run')]
+        self.assertEqual(ran, ['python', 'forge-which'])                    # 🤖 no network, input or OLNM_PY needed
 
 
 if __name__ == "__main__":

@@ -1,8 +1,8 @@
 name: Pages
 
-# 📖 docs/ is the hand-written 利用・検証ガイド (the front page). The parent's reusable workflow adds the usage guide
-# from docs/guide.page.json under docs/guide/ (guide_dir), with 📚 機能全一覧 read from olnm.py. Pull requests
-# build it; only main deploys.
+# 📖 The parent's reusable workflow builds the 利用・検証ガイド from docs/guide.page.json with PySaiyanWeBoo, like every other
+# guide: 🔬 検証ガイド (its 🤖 steps run in CI), 🧩 機能一覧 and 📚 機能全一覧 read from olnm.py; icon and favicon come from
+# CaChereCyCle (guide_brand). Pull requests build it; only main deploys.
 on:
   push:
     branches: [main]
@@ -20,13 +20,8 @@ permissions:
 
 jobs:
   pages:
-    uses: myon-bioinformatics/myon-bioinformatics/.github/workflows/reusable-pages-static.yml@1962e42c110ac47f8a2581c71c93fc9ac21afb94
+    uses: myon-bioinformatics/myon-bioinformatics/.github/workflows/reusable-pages-static.yml@ce5146e71bc1f9b80f9045e8cb7184945eacfc36
     with:
-      artifact_path: docs
-      # Stage Pages brand assets: the front page's favicons next to it
-      build: |
-        mkdir -p docs/assets/brand
-        cp assets/brand/favicon.ico assets/brand/favicon.png docs/assets/brand/
+      artifact_path: _site
       guide_page: docs/guide.page.json
-      guide_dir: guide
       guide_brand: OneLaunchNumerousModules
