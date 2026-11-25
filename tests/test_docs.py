@@ -253,10 +253,10 @@ class Icons(HTMLParser):
 class PagesAssetsTests(unittest.TestCase):
     def test_deployed_icons_resolve_to_canonical_bytes(self):
         workflow = (ROOT / '.github/workflows/pages.yml').read_text()
-        self.assertIn('path: docs', workflow)
-        match = re.search(r'- name: Stage Pages brand assets\n        run: \|\n((?:          [^\n]+\n)+)', workflow)
+        self.assertIn('artifact_path: docs', workflow)
+        match = re.search(r'      build: \|\n((?:        [^\n]+\n)+)', workflow)   # Stage Pages brand assets (the reusable build)
         self.assertIsNotNone(match)
-        commands = '\n'.join(line[10:] for line in match.group(1).splitlines())
+        commands = '\n'.join(line[8:] for line in match.group(1).splitlines())
         with tempfile.TemporaryDirectory() as directory:
             stage = Path(directory)
             shutil.copytree(ROOT / 'docs', stage / 'docs')
