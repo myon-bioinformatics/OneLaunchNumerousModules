@@ -1,0 +1,154 @@
+{
+ "schema": "web-ui-page/1",
+ "title": "olnm 機能一覧",
+ "theme": "auto",
+ "description": "ワンライナー集 olnm の機能を、コードから全部並べる。実行方法の選び方と検証の記録は表紙（利用・検証ガイド）へ。",
+ "icon": "./icon.png",
+ "favicon": "./favicon.png",
+ "blocks": [
+  {
+   "type": "badges",
+   "items": [
+    "📄 単一ファイル（olnm.py）",
+    "🧰 標準ライブラリのみ",
+    "🐚 bash / zsh",
+    "🔒 閉域網でも"
+   ]
+  },
+  {
+   "type": "tabs",
+   "id": "guide",
+   "tabs": [
+    {
+     "label": "🧩 機能一覧",
+     "blocks": [
+      {
+       "type": "section",
+       "title": "📖 表紙",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "環境と実行方法を選んでコマンドと結果を確かめる手順は、表紙の「利用・検証ガイド」にあります。"
+        },
+        {
+         "type": "links",
+         "items": [
+          {
+           "label": "📖 利用・検証ガイド（表紙）",
+           "href": "../"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "section",
+       "title": "▶️ 実行",
+       "blocks": [
+        {
+         "type": "card",
+         "title": "📖 一覧",
+         "text": "全 251 本。区分・絵文字・説明・使い方の例。",
+         "blocks": [
+          {
+           "type": "output",
+           "text": "$ olnm ls\nmeta     📖 olnm           list one-liners (olnm git = one section)\nmeta     🔎 olnm_grep      search help text (olnm_grep json)\nmeta     🤔 olnm_like      closest names to a typo or fragment (olnm_like uvtets)\n…"
+          }
+         ]
+        },
+        {
+         "type": "card",
+         "title": "🗂️ 区分",
+         "text": "区分の名前だけ。olnm ls の絞り込みに使えます。",
+         "blocks": [
+          {
+           "type": "output",
+           "text": "$ olnm sections\nmeta uv python node bun git gh files text net system airgap hub docker tmux memo mise"
+          }
+         ]
+        },
+        {
+         "type": "card",
+         "title": "🔎 探す",
+         "text": "説明文から探します。",
+         "blocks": [
+          {
+           "type": "output",
+           "text": "$ olnm grep git\nmeta     🎛️ olnm_dial      show / set dial offline | local | mirror | github …\ngh       🐙 ghpr           🎛️ create PR (hubdial at offline..mirror, gh at github) (ghpr \"title\")\n…"
+          }
+         ]
+        },
+        {
+         "type": "card",
+         "title": "🤔 打ち間違い",
+         "text": "近い名前を出します。",
+         "blocks": [
+          {
+           "type": "output",
+           "text": "$ olnm like gti\nghi\njget\nhget\ngwip\ngtag"
+          }
+         ]
+        },
+        {
+         "type": "card",
+         "title": "👁️ 中身を見る",
+         "text": "動かす前に定義を読めます。",
+         "blocks": [
+          {
+           "type": "output",
+           "text": "$ olnm show gp\n# 🚀 gp: push current branch to origin (dial decides where), set upstream\ngp() { git push -u origin \"$(git branch --show-current)\" \"$@\"; }"
+          }
+         ]
+        },
+        {
+         "type": "card",
+         "title": "🧮 計算",
+         "text": "引用符なしで掛け算するときは mul。",
+         "blocks": [
+          {
+           "type": "output",
+           "text": "$ olnm calc 6 mul 7\n42"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "label": "🎞 GIF デモ",
+     "blocks": [
+      {
+       "type": "text",
+       "text": "🎞 まだ GIF はありません。動く様子を GIF にしたら、ここに並びます。",
+       "muted": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "title": "🔗 リンク",
+   "blocks": [
+    {
+     "type": "links",
+     "items": [
+      {
+       "label": "📖 利用・検証ガイド（表紙）",
+       "href": "../"
+      },
+      {
+       "label": "📦 リポジトリ",
+       "href": "https://github.com/myon-bioinformatics/OneLaunchNumerousModules"
+      },
+      {
+       "label": "📄 olnm.py",
+       "href": "https://github.com/myon-bioinformatics/OneLaunchNumerousModules/blob/main/olnm.py"
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}
