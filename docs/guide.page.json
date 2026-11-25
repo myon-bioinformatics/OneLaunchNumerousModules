@@ -1,154 +1,553 @@
 {
- "schema": "web-ui-page/1",
- "title": "olnm 機能一覧",
- "theme": "auto",
- "description": "ワンライナー集 olnm の機能を、コードから全部並べる。実行方法の選び方と検証の記録は表紙（利用・検証ガイド）へ。",
- "icon": "./icon.png",
- "favicon": "./favicon.png",
- "blocks": [
-  {
-   "type": "badges",
-   "items": [
-    "📄 単一ファイル（olnm.py）",
-    "🧰 標準ライブラリのみ",
-    "🐚 bash / zsh",
-    "🔒 閉域網でも"
-   ]
-  },
-  {
-   "type": "tabs",
-   "id": "guide",
-   "tabs": [
+  "schema": "web-ui-page/1",
+  "title": "olnm 利用・検証ガイド",
+  "theme": "modern",
+  "description": "ワンライナー集 olnm の実行方法を選んで、コマンドと結果を確かめ、記録する。機能はコードから全部並べる。",
+  "icon": "./icon.png",
+  "favicon": "./favicon.png",
+  "blocks": [
     {
-     "label": "🧩 機能一覧",
-     "blocks": [
-      {
-       "type": "section",
-       "title": "📖 表紙",
-       "blocks": [
-        {
-         "type": "text",
-         "text": "環境と実行方法を選んでコマンドと結果を確かめる手順は、表紙の「利用・検証ガイド」にあります。"
-        },
-        {
-         "type": "links",
-         "items": [
-          {
-           "label": "📖 利用・検証ガイド（表紙）",
-           "href": "../"
-          }
-         ]
-        }
-       ]
-      },
-      {
-       "type": "section",
-       "title": "▶️ 実行",
-       "blocks": [
-        {
-         "type": "card",
-         "title": "📖 一覧",
-         "text": "全 251 本。区分・絵文字・説明・使い方の例。",
-         "blocks": [
-          {
-           "type": "output",
-           "text": "$ olnm ls\nmeta     📖 olnm           list one-liners (olnm git = one section)\nmeta     🔎 olnm_grep      search help text (olnm_grep json)\nmeta     🤔 olnm_like      closest names to a typo or fragment (olnm_like uvtets)\n…"
-          }
-         ]
-        },
-        {
-         "type": "card",
-         "title": "🗂️ 区分",
-         "text": "区分の名前だけ。olnm ls の絞り込みに使えます。",
-         "blocks": [
-          {
-           "type": "output",
-           "text": "$ olnm sections\nmeta uv python node bun git gh files text net system airgap hub docker tmux memo mise"
-          }
-         ]
-        },
-        {
-         "type": "card",
-         "title": "🔎 探す",
-         "text": "説明文から探します。",
-         "blocks": [
-          {
-           "type": "output",
-           "text": "$ olnm grep git\nmeta     🎛️ olnm_dial      show / set dial offline | local | mirror | github …\ngh       🐙 ghpr           🎛️ create PR (hubdial at offline..mirror, gh at github) (ghpr \"title\")\n…"
-          }
-         ]
-        },
-        {
-         "type": "card",
-         "title": "🤔 打ち間違い",
-         "text": "近い名前を出します。",
-         "blocks": [
-          {
-           "type": "output",
-           "text": "$ olnm like gti\nghi\njget\nhget\ngwip\ngtag"
-          }
-         ]
-        },
-        {
-         "type": "card",
-         "title": "👁️ 中身を見る",
-         "text": "動かす前に定義を読めます。",
-         "blocks": [
-          {
-           "type": "output",
-           "text": "$ olnm show gp\n# 🚀 gp: push current branch to origin (dial decides where), set upstream\ngp() { git push -u origin \"$(git branch --show-current)\" \"$@\"; }"
-          }
-         ]
-        },
-        {
-         "type": "card",
-         "title": "🧮 計算",
-         "text": "引用符なしで掛け算するときは mul。",
-         "blocks": [
-          {
-           "type": "output",
-           "text": "$ olnm calc 6 mul 7\n42"
-          }
-         ]
-        }
-       ]
-      }
-     ]
+      "type": "badges",
+      "items": [
+        "📄 単一ファイル（olnm.py）",
+        "🧰 標準ライブラリのみ",
+        "🐚 bash / zsh",
+        "🔒 閉域網でも"
+      ]
     },
     {
-     "label": "🎞 GIF デモ",
-     "blocks": [
-      {
-       "type": "text",
-       "text": "🎞 まだ GIF はありません。動く様子を GIF にしたら、ここに並びます。",
-       "muted": true
-      }
-     ]
-    }
-   ]
-  },
-  {
-   "type": "section",
-   "title": "🔗 リンク",
-   "blocks": [
+      "type": "tabs",
+      "id": "guide",
+      "tabs": [
+        {
+          "label": "🔬 検証ガイド",
+          "blocks": [
+            {
+              "type": "text",
+              "text": "実行方法と環境を選び、コマンドと結果を確かめます。各手順の結果はこのブラウザに記録でき（端末間の同期なし・閲覧データを消すと消える）、JSON で控えを保存・読込できます。別の版の記録を読み込むと状態は未検証に戻ります。",
+              "muted": true
+            },
+            {
+              "type": "runbook",
+              "id": "olnm",
+              "layout": "side",
+              "books": [
+                {
+                  "label": "🐍 Python ワンライナー",
+                  "intro": "取得したリポジトリから Python API を直接呼びます。",
+                  "runbook": {
+                    "key": "olnm/python",
+                    "source": "0f2845855a29",
+                    "steps": [
+                      {
+                        "id": "clone",
+                        "title": "リポジトリを取得する",
+                        "command": "git clone https://github.com/myon-bioinformatics/OneLaunchNumerousModules.git\ncd OneLaunchNumerousModules\ngit checkout 0f2845855a2955680513b57a15398431f08a7027",
+                        "expect": "指定したコミットのリポジトリに移動する。",
+                        "needs": "Git、ネットワーク、書き込み可能な作業ディレクトリ。",
+                        "trouble": {
+                          "seen": "clone 先が既に存在する / 通信エラー。",
+                          "check": "git rev-parse HEAD が上記 SHA と一致する。",
+                          "fix": "既存ディレクトリを確認するか別の場所で clone する。"
+                        }
+                      },
+                      {
+                        "id": "python",
+                        "title": "Python から関数を呼ぶ",
+                        "command": "python3 -c 'import olnm, sys; sys.exit(olnm.calculate(\"6\", \"mul\", \"7\"))'",
+                        "expect": "42（終了コード 0）",
+                        "needs": "前の手順でリポジトリ内に移動済み。Python 3.11 以降。",
+                        "trouble": {
+                          "seen": "ModuleNotFoundError: No module named olnm",
+                          "check": "olnm.py のあるリポジトリ内で実行しているか確認。",
+                          "fix": "リポジトリのディレクトリへ移動する。uv tool install だけでは通常の python3 から import できない。"
+                        },
+                        "run": true
+                      }
+                    ],
+                    "statuses": [
+                      [
+                        "todo",
+                        "未検証"
+                      ],
+                      [
+                        "pass",
+                        "検証済み"
+                      ],
+                      [
+                        "hold",
+                        "保留"
+                      ],
+                      [
+                        "block",
+                        "ブロッカー"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "label": "⚡ uv でファイル実行",
+                  "intro": "ツール登録せず、uv で保存済みファイルを実行します。",
+                  "runbook": {
+                    "key": "olnm/uvfile",
+                    "source": "0f2845855a29",
+                    "steps": [
+                      {
+                        "id": "file",
+                        "title": "olnm.py を用意する",
+                        "command": "mkdir -p \"$HOME/.local/share/olnm\"\ncurl -fL https://raw.githubusercontent.com/myon-bioinformatics/OneLaunchNumerousModules/0f2845855a2955680513b57a15398431f08a7027/olnm.py -o \"$HOME/.local/share/olnm/olnm.py\"\nexport OLNM_PY=\"$HOME/.local/share/olnm/olnm.py\"",
+                        "expect": "ダウンロードが成功し、OLNM_PY が設定される。",
+                        "needs": "Python 3.11 以降、curl、ネットワーク。",
+                        "trouble": {
+                          "seen": "curl: command not found / HTTP エラー / ファイルが見つからない。",
+                          "check": "python3 --version と test -f \"$OLNM_PY\" で確認。",
+                          "fix": "curl と通信を確認し、同じターミナルで export を再実行。"
+                        }
+                      },
+                      {
+                        "id": "uvfile",
+                        "title": "uv で実行する",
+                        "command": "uv --version\nuv run --no-project \"$OLNM_PY\" calc 6 mul 7",
+                        "expect": "uv のバージョンに続き 42（終了コード 0）。",
+                        "needs": "uv、Python 3.11 以降、bash、OLNM_PY。",
+                        "trouble": {
+                          "seen": "uv: command not found / Python が見つからない。",
+                          "check": "uv --version と test -f \"$OLNM_PY\" を確認。",
+                          "fix": "uv を導入し、同じターミナルで OLNM_PY を設定する。Python が未導入なら取得が発生する場合がある。"
+                        }
+                      }
+                    ],
+                    "statuses": [
+                      [
+                        "todo",
+                        "未検証"
+                      ],
+                      [
+                        "pass",
+                        "検証済み"
+                      ],
+                      [
+                        "hold",
+                        "保留"
+                      ],
+                      [
+                        "block",
+                        "ブロッカー"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "label": "🧰 uv にツール登録",
+                  "intro": "リポジトリを常用 CLI として登録します。インストールは利用者の環境を変更します。",
+                  "runbook": {
+                    "key": "olnm/uvtool",
+                    "source": "0f2845855a29",
+                    "steps": [
+                      {
+                        "id": "clone",
+                        "title": "リポジトリを取得する",
+                        "command": "git clone https://github.com/myon-bioinformatics/OneLaunchNumerousModules.git\ncd OneLaunchNumerousModules\ngit checkout 0f2845855a2955680513b57a15398431f08a7027",
+                        "expect": "指定したコミットのリポジトリに移動する。",
+                        "needs": "Git、ネットワーク、書き込み可能な作業ディレクトリ。",
+                        "trouble": {
+                          "seen": "clone 先が既に存在する / 通信エラー。",
+                          "check": "git rev-parse HEAD が上記 SHA と一致する。",
+                          "fix": "既存ディレクトリを確認するか別の場所で clone する。"
+                        }
+                      },
+                      {
+                        "id": "install",
+                        "title": "ツールを登録する",
+                        "command": "uv --version\nuv tool install .\nuv tool list\nuv tool dir --bin",
+                        "expect": "ツール一覧に one-launch-numerous-modules が表示される。",
+                        "needs": "uv、Python 3.11 以降、取得したリポジトリのルート。ビルド依存の取得には通信またはキャッシュが必要。",
+                        "trouble": {
+                          "seen": "setuptools が見つからない / ビルド失敗。",
+                          "check": "pyproject.toml がある場所か、ネットワークと uv キャッシュを確認。",
+                          "fix": "通信可能な状態で再実行。オフラインでは setuptools>=68 などのキャッシュが必要。"
+                        }
+                      },
+                      {
+                        "id": "toolrun",
+                        "title": "登録したコマンドを実行する",
+                        "command": "olnm calc 6 mul 7",
+                        "expect": "42（終了コード 0）。",
+                        "needs": "ツール登録済み。uv のツール実行ディレクトリが PATH に含まれる。",
+                        "trouble": {
+                          "seen": "olnm: command not found",
+                          "check": "uv tool list と uv tool dir --bin を確認。",
+                          "fix": "uv tool update-shell を実行し、案内に従って新しいターミナルを開く。通常の python3 の import 環境は変更されない。"
+                        }
+                      }
+                    ],
+                    "statuses": [
+                      [
+                        "todo",
+                        "未検証"
+                      ],
+                      [
+                        "pass",
+                        "検証済み"
+                      ],
+                      [
+                        "hold",
+                        "保留"
+                      ],
+                      [
+                        "block",
+                        "ブロッカー"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "label": "📦 uv プロジェクトに依存登録",
+                  "intro": "既存の uv プロジェクトにローカルリポジトリを依存登録します。pyproject.toml と lock が変更されます。",
+                  "runbook": {
+                    "key": "olnm/uvproject",
+                    "source": "0f2845855a29",
+                    "steps": [
+                      {
+                        "id": "clone-project",
+                        "title": "依存元を取得する",
+                        "command": "git clone https://github.com/myon-bioinformatics/OneLaunchNumerousModules.git\ncd OneLaunchNumerousModules\ngit checkout 0f2845855a2955680513b57a15398431f08a7027",
+                        "expect": "指定コミットを取得し、リポジトリ内に移動する。",
+                        "needs": "Git、ネットワーク、書き込み可能な作業ディレクトリ。",
+                        "trouble": {
+                          "seen": "clone 先が既に存在する / 通信エラー。",
+                          "check": "git rev-parse HEAD が上記 SHA と一致する。",
+                          "fix": "既存ディレクトリを確認するか別の場所で clone する。"
+                        }
+                      },
+                      {
+                        "id": "project",
+                        "title": "利用側のプロジェクトへ登録する",
+                        "command": "export OLNM_REPO=\"$PWD\"\ncd /path/to/your-uv-project\nuv add \"$OLNM_REPO\"\nuv run python -c 'import olnm, sys; sys.exit(olnm.calculate(\"6\", \"mul\", \"7\"))'",
+                        "expect": "最後に 42（終了コード 0）。",
+                        "needs": "前の手順の直後に OLNM_REPO を設定。利用側の uv プロジェクトと uv、bash、Python 3.11 以降。/path/to/your-uv-project は実際のパスに変更する。",
+                        "trouble": {
+                          "seen": "指定したディレクトリがない / パッケージのビルドに失敗。",
+                          "check": "pwd、test -f \"$OLNM_REPO/pyproject.toml\"、利用側の pyproject.toml を確認。",
+                          "fix": "パスとビルド依存の取得可否を確認。tool install の環境とは別なので uv run を使う。"
+                        }
+                      }
+                    ],
+                    "statuses": [
+                      [
+                        "todo",
+                        "未検証"
+                      ],
+                      [
+                        "pass",
+                        "検証済み"
+                      ],
+                      [
+                        "hold",
+                        "保留"
+                      ],
+                      [
+                        "block",
+                        "ブロッカー"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "label": "🟩 Node から実行",
+                  "intro": "Node の子プロセスから Python を呼び、引数は配列で渡します。",
+                  "runbook": {
+                    "key": "olnm/node",
+                    "source": "0f2845855a29",
+                    "steps": [
+                      {
+                        "id": "file",
+                        "title": "olnm.py を用意する",
+                        "command": "mkdir -p \"$HOME/.local/share/olnm\"\ncurl -fL https://raw.githubusercontent.com/myon-bioinformatics/OneLaunchNumerousModules/0f2845855a2955680513b57a15398431f08a7027/olnm.py -o \"$HOME/.local/share/olnm/olnm.py\"\nexport OLNM_PY=\"$HOME/.local/share/olnm/olnm.py\"",
+                        "expect": "ダウンロードが成功し、OLNM_PY が設定される。",
+                        "needs": "Python 3.11 以降、curl、ネットワーク。",
+                        "trouble": {
+                          "seen": "curl: command not found / HTTP エラー / ファイルが見つからない。",
+                          "check": "python3 --version と test -f \"$OLNM_PY\" で確認。",
+                          "fix": "curl と通信を確認し、同じターミナルで export を再実行。"
+                        }
+                      },
+                      {
+                        "id": "node",
+                        "title": "Node から呼び出す",
+                        "command": "node -e 'const {execFileSync}=require(\"node:child_process\"); process.stdout.write(execFileSync(\"python3\",[process.env.OLNM_PY,\"calc\",\"6\",\"mul\",\"7\"],{encoding:\"utf8\"}))'",
+                        "expect": "42（終了コード 0）。",
+                        "needs": "Node、Python 3.11 以降、bash、OLNM_PY。",
+                        "trouble": {
+                          "seen": "node: command not found / spawnSync python3 ENOENT。",
+                          "check": "node --version、python3 --version、test -f \"$OLNM_PY\" を確認。",
+                          "fix": "不足する実行環境を導入し、同じシェルで OLNM_PY を設定する。Node がない場合は Python の方法を選ぶ。"
+                        }
+                      }
+                    ],
+                    "statuses": [
+                      [
+                        "todo",
+                        "未検証"
+                      ],
+                      [
+                        "pass",
+                        "検証済み"
+                      ],
+                      [
+                        "hold",
+                        "保留"
+                      ],
+                      [
+                        "block",
+                        "ブロッカー"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "label": "🏠 hub / dial の委譲",
+                  "intro": "olnm hub / olnm dial が NagoyAction の nagoyaction hub に渡されるかを確かめます。どの手順も状態を変えません。",
+                  "runbook": {
+                    "key": "olnm/forge",
+                    "source": "0f2845855a29",
+                    "steps": [
+                      {
+                        "id": "file",
+                        "title": "olnm.py を用意する",
+                        "command": "mkdir -p \"$HOME/.local/share/olnm\"\ncurl -fL https://raw.githubusercontent.com/myon-bioinformatics/OneLaunchNumerousModules/0f2845855a2955680513b57a15398431f08a7027/olnm.py -o \"$HOME/.local/share/olnm/olnm.py\"\nexport OLNM_PY=\"$HOME/.local/share/olnm/olnm.py\"",
+                        "expect": "ダウンロードが成功し、OLNM_PY が設定される。",
+                        "needs": "Python 3.11 以降、curl、ネットワーク。",
+                        "trouble": {
+                          "seen": "curl: command not found / HTTP エラー / ファイルが見つからない。",
+                          "check": "python3 --version と test -f \"$OLNM_PY\" で確認。",
+                          "fix": "curl と通信を確認し、同じターミナルで export を再実行。"
+                        }
+                      },
+                      {
+                        "id": "forge-which",
+                        "title": "委譲先の有無を確かめる",
+                        "command": "echo \"NAGOYACTION=${NAGOYACTION:-未設定}\"\ncommand -v nagoyaction || echo \"nagoyaction なし（olnm hub は導入方法を表示して終了コード 127）\"",
+                        "expect": "NAGOYACTION の値と、nagoyaction のパスまたは「nagoyaction なし…」。NAGOYACTION を設定している場合はそちらが優先される。",
+                        "needs": "bash / zsh。uv ツールとして入れた場合は uv tool dir --bin が PATH に入っている。",
+                        "trouble": {
+                          "seen": "入れたはずなのに「なし」と出る。",
+                          "check": "echo \"$PATH\" と uv tool dir --bin を確認。",
+                          "fix": "uv tool update-shell を実行して新しいターミナルを開く。clone だけ使う場合は export NAGOYACTION=/path/to/NagoyAction/nagoyaction.py。"
+                        },
+                        "run": true
+                      },
+                      {
+                        "id": "forge-hub",
+                        "title": "olnm hub を実行する",
+                        "command": "python3 \"$OLNM_PY\" hub status\necho \"exit=$?\"",
+                        "expect": "nagoyaction がある場合: nagoyaction hub status の 1 行（例: 🎛️  ☁️ github (3) | ⚪ down | 📚 0 | http://localhost:3000）と exit=0。ない場合: 「the local forge now lives in NagoyAction」と導入方法、exit=127。",
+                        "needs": "前の手順で OLNM_PY を設定済み。status は状態を変えない。",
+                        "trouble": {
+                          "seen": "nagoyaction があるのに導入方法が表示される。",
+                          "check": "nagoyaction hub status を直接実行した結果と同じか確認。",
+                          "fix": "同じシェルの PATH と NAGOYACTION を確認する。olnm.py が引き継ぎ後の版（上記コミット以降）か確認する。"
+                        }
+                      },
+                      {
+                        "id": "forge-dial",
+                        "title": "olnm dial を確かめる",
+                        "command": "python3 \"$OLNM_PY\" dial\necho \"exit=$?\"\ncat \"${DIAL_FILE:-$HOME/.olnm/dial}\" 2>/dev/null || echo \"保存なし（github として扱う）\"",
+                        "expect": "名前が先、保存値の数字が後の表示（例: 🎛️  ☁️ github (3)  (~/.olnm/dial)）と exit=0。保存ファイルの中身は数字 0〜3、または「保存なし…」。",
+                        "needs": "名前を付けずに実行する（付けると状態が変わる）。",
+                        "trouble": {
+                          "seen": "表示が数字から始まる（🎛️  3 ☁️ github）。",
+                          "check": "olnm.py の版を確認する。数字が先なら引き継ぎ前の版。",
+                          "fix": "olnm.py を上記コミット以降に更新する。変える場合は dial offline / local / mirror / github のように名前で指定する。forge があり nagoyaction がない場合は「dial unchanged」で止まる（origin を動かせないため）。"
+                        }
+                      }
+                    ],
+                    "statuses": [
+                      [
+                        "todo",
+                        "未検証"
+                      ],
+                      [
+                        "pass",
+                        "検証済み"
+                      ],
+                      [
+                        "hold",
+                        "保留"
+                      ],
+                      [
+                        "block",
+                        "ブロッカー"
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "env": {
+                "options": [
+                  {
+                    "label": "🐧 Linux / WSL（bash）",
+                    "note": "bash / zsh のターミナルで実行します。"
+                  },
+                  {
+                    "label": "🐚 Linux / WSL（zsh）",
+                    "note": "bash / zsh のターミナルで実行します。"
+                  },
+                  {
+                    "label": "🍎 macOS（bash / zsh）",
+                    "note": "macOS は GNU コマンドとの差があるため、対象コマンドを個別に確認してください。"
+                  },
+                  {
+                    "label": "🪟 Windows（WSL を使用）",
+                    "note": "PowerShell / cmd ではなく WSL の bash または zsh で実行してください。"
+                  }
+                ]
+              },
+              "notice": "コマンドは選んだシェルで実行します（ブラウザからは実行しません）。🤖 の手順は CI で実際に動かした結果です。"
+            },
+            {
+              "type": "section",
+              "title": "📌 根拠と注意",
+              "blocks": [
+                {
+                  "type": "text",
+                  "text": "対象: OneLaunchNumerousModules の検証対象コミット 0f2845855a2955680513b57a15398431f08a7027（2026-11-11 確認）。各手順の初期状態は未検証です。自身の環境で実行後、結果を記録してください。",
+                  "muted": true
+                },
+                {
+                  "type": "text",
+                  "text": "calc では数値と演算子を使用します。引用符なしで乗算する場合は * の代わりに mul を使用してください。",
+                  "muted": true
+                },
+                {
+                  "type": "text",
+                  "text": "olnm hub は NagoyAction の nagoyaction hub に引数と終了コードをそのまま渡します（olnm に forge のコードはありません）。forge の状態（$OLNM_HOME/forge/state.json）があるとき、olnm dial の変更も nagoyaction hub dial に任せます。ダイヤルは offline / local / mirror / github の名前で指定し、保存ファイルには従来どおり数字 0〜3 が入ります。",
+                  "muted": true
+                },
+                {
+                  "type": "links",
+                  "items": [
+                    {
+                      "label": "🔖 対象のソースと README",
+                      "href": "https://github.com/myon-bioinformatics/OneLaunchNumerousModules/tree/0f2845855a2955680513b57a15398431f08a7027"
+                    },
+                    {
+                      "label": "⚡ uv の導入手順",
+                      "href": "https://docs.astral.sh/uv/getting-started/installation/"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "label": "🧩 機能一覧",
+          "blocks": [
+            {
+              "type": "section",
+              "title": "▶️ 実行",
+              "blocks": [
+                {
+                  "type": "card",
+                  "title": "📖 一覧",
+                  "text": "全 251 本。区分・絵文字・説明・使い方の例。",
+                  "blocks": [
+                    {
+                      "type": "output",
+                      "text": "$ olnm ls\nmeta     📖 olnm           list one-liners (olnm git = one section)\nmeta     🔎 olnm_grep      search help text (olnm_grep json)\nmeta     🤔 olnm_like      closest names to a typo or fragment (olnm_like uvtets)\n…"
+                    }
+                  ]
+                },
+                {
+                  "type": "card",
+                  "title": "🗂️ 区分",
+                  "text": "区分の名前だけ。olnm ls の絞り込みに使えます。",
+                  "blocks": [
+                    {
+                      "type": "output",
+                      "text": "$ olnm sections\nmeta uv python node bun git gh files text net system airgap hub docker tmux memo mise"
+                    }
+                  ]
+                },
+                {
+                  "type": "card",
+                  "title": "🔎 探す",
+                  "text": "説明文から探します。",
+                  "blocks": [
+                    {
+                      "type": "output",
+                      "text": "$ olnm grep git\nmeta     🎛️ olnm_dial      show / set dial offline | local | mirror | github …\ngh       🐙 ghpr           🎛️ create PR (hubdial at offline..mirror, gh at github) (ghpr \"title\")\n…"
+                    }
+                  ]
+                },
+                {
+                  "type": "card",
+                  "title": "🤔 打ち間違い",
+                  "text": "近い名前を出します。",
+                  "blocks": [
+                    {
+                      "type": "output",
+                      "text": "$ olnm like gti\nghi\njget\nhget\ngwip\ngtag"
+                    }
+                  ]
+                },
+                {
+                  "type": "card",
+                  "title": "👁️ 中身を見る",
+                  "text": "動かす前に定義を読めます。",
+                  "blocks": [
+                    {
+                      "type": "output",
+                      "text": "$ olnm show gp\n# 🚀 gp: push current branch to origin (dial decides where), set upstream\ngp() { git push -u origin \"$(git branch --show-current)\" \"$@\"; }"
+                    }
+                  ]
+                },
+                {
+                  "type": "card",
+                  "title": "🧮 計算",
+                  "text": "引用符なしで掛け算するときは mul。",
+                  "blocks": [
+                    {
+                      "type": "output",
+                      "text": "$ olnm calc 6 mul 7\n42"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "label": "🎞 GIF デモ",
+          "blocks": [
+            {
+              "type": "text",
+              "text": "🎞 まだ GIF はありません。動く様子を GIF にしたら、ここに並びます。",
+              "muted": true
+            }
+          ]
+        }
+      ]
+    },
     {
-     "type": "links",
-     "items": [
-      {
-       "label": "📖 利用・検証ガイド（表紙）",
-       "href": "../"
-      },
-      {
-       "label": "📦 リポジトリ",
-       "href": "https://github.com/myon-bioinformatics/OneLaunchNumerousModules"
-      },
-      {
-       "label": "📄 olnm.py",
-       "href": "https://github.com/myon-bioinformatics/OneLaunchNumerousModules/blob/main/olnm.py"
-      }
-     ]
+      "type": "section",
+      "title": "🔗 リンク",
+      "blocks": [
+        {
+          "type": "links",
+          "items": [
+            {
+              "label": "📦 リポジトリ",
+              "href": "https://github.com/myon-bioinformatics/OneLaunchNumerousModules"
+            },
+            {
+              "label": "📄 olnm.py",
+              "href": "https://github.com/myon-bioinformatics/OneLaunchNumerousModules/blob/main/olnm.py"
+            }
+          ]
+        }
+      ]
     }
-   ]
-  }
- ]
+  ]
 }
