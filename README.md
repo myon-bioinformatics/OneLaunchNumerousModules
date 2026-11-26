@@ -1,7 +1,7 @@
 # 🧷 OneLaunchNumerousModules (olnm)
 
 <p align="center">
-  <img src="assets/brand/olnm-icon.png" width="160" height="160" alt="olnm のアイコン：巻物に Python ロゴと周辺の開発ツール">
+  <img src="https://myon-bioinformatics.github.io/OneLaunchNumerousModules/icon.png" width="160" height="160" alt="olnm のアイコン：巻物に Python ロゴと周辺の開発ツール">
 </p>
 
 bash/zsh 用の **251 個のシェル関数**と、それを Python・Node から名前で呼べる **30 個の Python API**。
