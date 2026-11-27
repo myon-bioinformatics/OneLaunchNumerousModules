@@ -20,7 +20,7 @@ permissions:
 
 jobs:
   pages:
-    uses: myon-bioinformatics/myon-bioinformatics/.github/workflows/reusable-pages-static.yml@ce5146e71bc1f9b80f9045e8cb7184945eacfc36
+    uses: myon-bioinformatics/myon-bioinformatics/.github/workflows/reusable-pages-static.yml@43cfe1df924ea96ca44f47a6771c18102c38f7f3
     with:
       artifact_path: _site
       guide_page: docs/guide.page.json
