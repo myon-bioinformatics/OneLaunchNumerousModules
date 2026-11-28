@@ -8,7 +8,7 @@ _spec = importlib.util.spec_from_file_location("olnm_fleet_check", ROOT / "vendo
 fleet = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(fleet)
 ACCEPTED = {
-    "vendor/fleet_check.py": "20de01921e50e9339aa9271b0547a5be7649b3b3",
+    "vendor/fleet_check.py": "eee8c096fc753465a5d5a26264e64c12e555638f",
     "vendor/cli_args.py": "5ae22b1a1b808eca93e3c385a8db867fbeb8ee32",
     "vendor/cli_args-LICENSE": "d849c17f5e7c18037e2ab2c04bc71eee3e22cd35",
 }
@@ -39,3 +39,6 @@ class ScriptsDescribeThemselves(unittest.TestCase):
         for path in sorted(root.glob("*.py")):
             if path.name != "conftest.py":
                 fleet.check_imports(root, path.name)
+
+    def test_no_top_level_vendor_package_imports(self):
+        assert fleet.check_no_vendor_package_imports(ROOT) == []
