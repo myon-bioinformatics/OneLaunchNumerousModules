@@ -5,6 +5,7 @@
 - Default stdlib commands delegate to pinned uv tools without registration.
 - Default yourself command works from a standalone copy, without installation.
 """
+import importlib.util
 import contextlib
 import hashlib
 import importlib
@@ -22,8 +23,24 @@ from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-import vendor.fleet_check as fleet_check
-from vendor.cli_args import Command, run_cli, run_command, run_node
+
+
+def load_vendored(name, relpath):
+    """Load a vendored file by path under a repo-unique name (cli_args README: Loading a vendored copy)."""
+    if name not in sys.modules:
+        spec = importlib.util.spec_from_file_location(name, Path(__file__).resolve().parents[1] / relpath)
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[name] = module
+        spec.loader.exec_module(module)
+    return sys.modules[name]
+
+
+_cli_args = load_vendored("onelaunchnumerousmodules_cli_args", "vendor/cli_args.py")
+Command = _cli_args.Command
+run_cli = _cli_args.run_cli
+run_command = _cli_args.run_command
+run_node = _cli_args.run_node
+fleet_check = load_vendored("onelaunchnumerousmodules_fleet_check", "vendor/fleet_check.py")
 
 
 def _utf8_child_env(env):
