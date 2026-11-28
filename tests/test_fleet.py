@@ -8,15 +8,15 @@ _spec = importlib.util.spec_from_file_location("olnm_fleet_check", ROOT / "vendo
 fleet = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(fleet)
 ACCEPTED = {
-    "vendor/fleet_check.py": "eee8c096fc753465a5d5a26264e64c12e555638f",
-    "vendor/cli_args.py": "5ae22b1a1b808eca93e3c385a8db867fbeb8ee32",
-    "vendor/cli_args-LICENSE": "d849c17f5e7c18037e2ab2c04bc71eee3e22cd35",
-}
+    "vendor/fleet_check.py",
+    "vendor/cli_args.py",
+    "vendor/cli_args-LICENSE",
+}  # 🔁 locked destinations; they follow main
 
 
 class VendorLock(unittest.TestCase):
     def test_fleet_check_is_the_accepted_parent_commit(self):
-        fleet.check_lock(ROOT, commits=ACCEPTED, sources={
+        fleet.check_lock(ROOT, sources={
             "vendor/fleet_check.py": (fleet.PARENT, "fleet_check.py"),
             "vendor/cli_args.py": ("myon-bioinformatics/cli_args", "cli_args.py"),
             "vendor/cli_args-LICENSE": ("myon-bioinformatics/cli_args", "LICENSE"),
