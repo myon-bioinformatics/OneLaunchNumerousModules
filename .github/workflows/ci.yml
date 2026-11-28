@@ -1,5 +1,8 @@
 name: CI
 on:
+  schedule:
+    - cron: "37 21 * * *"  # 🔁 follow-main
+  workflow_dispatch:
   push:
     branches: [main]
   pull_request:
@@ -65,3 +68,14 @@ jobs:
           test "$status" -eq 2
           test ! -s "$smoke_dir/bad.out"
           grep -F 'Invalid Turtle on stdin' "$smoke_dir/bad.err"
+
+  # 🔁 own sources follow main: on schedule / manual run, take main of own repositories and push to main
+  follow-main:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    uses: myon-bioinformatics/myon-bioinformatics/.github/workflows/reusable-follow-main.yml@main
+    permissions:
+      contents: write
+    with:
+      node-version: "26"
+      check: |
+        uv run --no-project python -m unittest discover
